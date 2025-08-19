@@ -1,0 +1,63 @@
+---
+import HeroImage from '../media/HeroImage.astro';
+import AuthorBlock from './AuthorBlock.astro';
+export interface Props {
+  post: any;
+  showThumb?: boolean;
+}
+
+const { post, showThumb = true } = Astro.props;
+const d = post?.data ?? {};
+const href = `/blog/${post?.slug ?? post?.id}/`;
+---
+
+<li class="small-card">
+
+  <div class="content">
+    <div class="meta">
+      <a class="title" href={href}>{d.title}</a>
+    </div>
+
+    <AuthorBlock author={d.author} />
+  </div>
+  {showThumb && d.heroImage && (
+    <a href={href} class="thumb" aria-label={d.title}>
+      <HeroImage src={d.heroImage} alt={d.imageAlt ?? d.title} class="img" />
+    </a>
+  )}
+</li>
+
+<style>
+  .small-card { 
+    list-style: none; 
+    display: flex; 
+    gap: .75rem; 
+    padding-block: .75rem; 
+    border-top: 1px solid #e5e7eb;
+  }
+  .thumb { 
+    flex: 0 0 140px; 
+    display: block; 
+    overflow: hidden; 
+    border-radius: 8px;
+  }
+  .thumb .img { 
+    width: 100%; 
+    height: 100%; 
+    aspect-ratio: 4/3; 
+    object-fit: cover; 
+    display: block; 
+  }
+  .content { flex: 1; min-width: 0; }
+  .meta { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+  .tag { font-size: .75rem; color: #6b7280; border: 1px solid #e5e7eb; padding: .125rem .375rem; border-radius: 5px; }
+  .title { 
+    text-decoration: none; 
+    color: inherit; 
+    font-weight: 600; 
+    line-height: 1.2;
+  }
+  .title:hover { text-decoration: underline; }
+  .desc { margin: .25rem 0 0; color: #374151; }
+  .byline { margin: .25rem 0 0; color: #6b7280; font-size: .9rem; }
+</style>

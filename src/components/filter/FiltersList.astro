@@ -1,0 +1,236 @@
+---
+import MultiSelectFilter from './MultiSelectFilter.astro';
+import ImageMultiSelectFilter from './ImageMultiSelectFilter.astro';
+
+interface Option { value: string; label?: string; disabled?: boolean }
+interface ImgOption { value: string; label?: string; img?: string; imageUrl?: string; disabled?: boolean }
+
+type FilterConfig =
+  | { variant?: 'default'; label: string; options: Option[]; selectedValues?: string[] }
+  | { variant: 'image'; label: string; options: ImgOption[]; selectedValues?: string[] };
+
+const { filters } = Astro.props as { filters: FilterConfig[] };
+
+// split: images first row, everything else second row
+const imageFilters   = filters.filter((f) => (f as any).variant === 'image');
+const defaultFilters = filters.filter((f) => (f as any).variant !== 'image');
+---
+
+<section id="filters" aria-label="filters">
+
+  <div class="topBar">
+    <div class="searchBars">
+      <input class="search" placeholder="Search"></input>
+      <input id="addr" placeholder="Location"></input>
+    </div>
+    <!-- full-width image row -->
+    <div class="filters-row images" role="group" aria-label="categories">
+      {imageFilters.map((f, i) => (
+        <ImageMultiSelectFilter
+          id={`img-${i}`}
+          label={f.label}
+          options={(f as any).options.map((o: any) => ({ ...o, imageUrl: o.imageUrl ?? o.img }))}
+          selectedValues={f.selectedValues}
+        />
+      ))}
+    </div>
+</div>
+
+  <!-- centered, wrapping control row -->
+  <div class="filters-row controls" role="group" aria-label="filters">
+    {defaultFilters.map((f, i) => (
+      <MultiSelectFilter
+        id={`ctl-${i}`}
+        label={f.label}
+        options={(f as any).options}
+        selectedValues={f.selectedValues}
+      />
+    ))}
+  </div>
+</section>
+
+<style>
+  #filters { display: grid; gap: 1rem; }
+
+  /* row containers */
+  .filters-row { width: 100%; }
+
+  /* IMAGE ROW: full width, wrap as needed, left aligned */
+  .filters-row.images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.25rem;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+
+  /* CONTROL ROW: centered, wrapping */
+  .filters-row.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem .75rem;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  /* tiny visual nits that were already in your styles */
+  .btn[aria-expanded="true"] .caret { transform: rotate(-135deg); }
+  .panel { margin-top: -1px; }
+
+  .searchBars {
+		display: flex;
+		flex-direction: row;
+		gap: 10px;
+    width: 100%;
+    
+	}
+	.searchBars input {
+		height: 50px;
+		width: 50%;
+    min-width: 250px;
+		border: border solid black 1px;
+    border-radius: 10px;
+    padding: 5px 5px 5px 10px;
+    box-sizing: border-box;
+	}
+
+  .topBar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+</style>
+
+
+
+<script type="module">
+  const container = document.getElementById('filters');
+  if (!container) throw new Error('#filters not found');
+
+  // Single source of truth you can read anywhere:
+  // window.filterObject = { [key: string]: string[] }
+  window.filterObject = window.filterObject || {};
+  const filterObject = window.filterObject;
+
+  const state = new Map(); // uid -> string[]
+  let openRoot = null;
+
+  // helper: make a nice, stable key from a title
+  const slug = (s) =>
+    (s || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+  function setupFilter(root) {
+    const btn = root.querySelector('[data-role="toggle"]');      // null for image variant
+    const panel = root.querySelector('.panel');                   // null for image variant
+    const summary = root.querySelector('[data-role="summary"]');  // may be null
+    const title = root.querySelector('[data-role="title"]')?.textContent?.trim() || '';
+    const uid = root.getAttribute('data-uid') || root.id || crypto.randomUUID();
+    const isImageVariant =
+      root.getAttribute('data-variant') === 'image' ||
+      root.dataset.component === 'ImageMultiSelectFilter' ||
+      !!root.querySelector('.imgList');
+
+    // Public key for your app to use (prefer explicit data-key if you add it)
+    const key = root.getAttribute('data-key') || slug(title) || uid;
+
+    const checkboxes = Array.from(root.querySelectorAll('input[type="checkbox"]'));
+
+    // Build value -> label map (used only for the summary text)
+    const valueToLabel = new Map();
+    root.querySelectorAll('label.option, label.image-option').forEach(row => {
+      const input = row.querySelector('input[type="checkbox"]');
+      if (!input) return;
+      const text = row.querySelector('span')?.textContent?.trim() || input.value;
+      valueToLabel.set(input.value, text);
+    });
+
+    function updateSummary() {
+      const values = checkboxes.filter(c => c.checked).map(c => c.value);
+      const count = values.length;
+
+      if (!isImageVariant && summary) {
+        summary.textContent =
+          count === 0 ? '' :
+          count === 1 ? (valueToLabel.get(values[0]) ?? values[0]) :
+          `(${count})`;
+      } else if (summary) {
+        summary.textContent = '';
+      }
+
+      if (btn) btn.setAttribute('aria-label', `${title} – ${count} selected`);
+    }
+
+    // dropdown wiring (only if button/panel exist)
+    function openPanel() {
+      if (!btn || !panel) return;
+      if (openRoot && openRoot !== root) {
+        openRoot.querySelector('.panel')?.classList.remove('open');
+        openRoot.querySelector('[data-role="toggle"]')?.setAttribute('aria-expanded','false');
+      }
+      panel.classList.add('open');
+      btn.setAttribute('aria-expanded','true');
+      openRoot = root;
+      setTimeout(() => {
+        document.addEventListener('click', onDocClick, true);
+        document.addEventListener('keydown', onKey);
+      }, 0);
+    }
+    function closePanel() {
+      if (!btn || !panel) return;
+      panel.classList.remove('open');
+      btn.setAttribute('aria-expanded','false');
+      if (openRoot === root) openRoot = null;
+      document.removeEventListener('click', onDocClick, true);
+      document.removeEventListener('keydown', onKey);
+    }
+    function togglePanel() { (panel?.classList.contains('open')) ? closePanel() : openPanel(); }
+    function onDocClick(e) { if (!root.contains(e.target)) closePanel(); }
+    function onKey(e) { if (e.key === 'Escape') closePanel(); }
+    if (btn) btn.addEventListener('click', togglePanel);
+
+    // Image tiles toggle their checkbox
+    root.querySelectorAll('label.image-option').forEach(tile => {
+      tile.addEventListener('click', (e) => {
+        const input = tile.querySelector('input[type="checkbox"]');
+        if (!input || input.disabled) return;
+        e.preventDefault();
+        input.checked = !input.checked;
+        emit();
+      });
+    });
+
+    // Default variant: listen to native checkbox changes
+    checkboxes.forEach(c => c.addEventListener('change', emit));
+
+    function emit() {
+      // compute current values
+      const values = checkboxes.filter(c => c.checked).map(c => c.value);
+
+      // keep both the internal map and the public object in sync
+      state.set(uid, values);
+      filterObject[key] = values.slice(); // always an array; [] when empty
+
+      updateSummary();
+
+      // optional: still dispatch your event for other listeners
+      const detail = {};
+      state.forEach((vals, k) => (detail[k] = vals));
+      container.dispatchEvent(new CustomEvent('filterschange', { bubbles: true, detail }));
+      // console.log(filterObject, 298)
+
+    }
+
+    // initial
+    state.set(uid, checkboxes.filter(c => c.checked).map(c => c.value));
+    filterObject[key] = state.get(uid).slice(); // prime the public object
+    updateSummary();
+  }
+
+  container
+    .querySelectorAll('[data-component="MultiSelectFilter"], [data-component="ImageMultiSelectFilter"]')
+    .forEach(setupFilter);
+</script>

@@ -1,0 +1,38 @@
+---
+import HeroImage from '../media/HeroImage.astro';
+import AuthorBlock from './AuthorBlock.astro';
+export interface Props {
+  posts: any[];
+  showThumb?: boolean;
+}
+const { posts = [], showThumb = true } = Astro.props;
+---
+
+<ul class="postlist">
+  {posts.map((p) => {
+    const d = p.data ?? {};
+    const href = `/blog/${p.slug ?? p.id}/`;
+    return (
+      <li class="column">
+        {showThumb && d.heroImage && (
+          <a href={href} class="thumb">
+            <HeroImage src={d.heroImage} alt={d.imageAlt ?? d.title} class="img" />
+          </a>
+        )}
+        <div class="meta block align-middle gap-2 align-middle height-fit">
+            {d.tag && <span class="tag border-solid border-1 p-1 rounded-[5px]">{d.tag}</span>} <a class="title align-middle" href={href}>{d.title}</a>
+        </div>
+        <p>{d.description}</p>
+        <AuthorBlock author={p.data.author} />
+      </li>
+    );
+  })}
+</ul>
+
+<style>
+  .postlist { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.75rem; }
+  .row { display:flex; gap:.75rem; align-items:flex-start; }
+  .thumb .img { display:block; width: 100%;}
+  .meta .title { text-decoration:none; color:inherit; font-weight:600; }
+  .tag { font-size:.75rem; color:#6b7280; }
+</style>

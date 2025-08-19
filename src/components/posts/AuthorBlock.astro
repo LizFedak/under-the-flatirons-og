@@ -1,0 +1,16 @@
+---
+import { getEntry, type Reference } from 'astro:content';
+
+export interface Props { author: Reference<'authors'>; }
+const { author } = Astro.props;
+
+const entry = await getEntry(author); // resolves {id:'liz-fedak', ...}
+if (!entry) throw new Error(`Author not found: ${author.id}`);
+---
+
+<a href={`/authors/${entry.slug}`} class="author-link">{entry.data.name}</a>
+
+<style>
+.author-link { text-decoration: none; color: inherit; font-weight: 600; }
+.author-link:hover { text-decoration: underline; }
+</style>

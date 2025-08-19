@@ -1,0 +1,67 @@
+[
+    {
+      "variant": "image",
+      "label": "type",
+      "options": [
+        { "value": "Music", "imageUrl": "https://picsum.photos/id/237/200/300" },
+        { "value": "STEM", "imageUrl": "https://picsum.photos/id/1003/200/300" },
+        { "value": "Art", "imageUrl": "https://picsum.photos/id/102/200/300" },
+        { "value": "Storytime", "imageUrl": "https://picsum.photos/id/1062/200/300" },
+        { "value": "Sports", "imageUrl": "https://picsum.photos/id/1084/200/300" },
+        { "value": "Creative", "imageUrl": "https://picsum.photos/id/1084/200/300" },
+        { "value": "Nature", "imageUrl": "https://picsum.photos/id/1084/200/300" },
+        { "value": "Water Play", "imageUrl": "https://picsum.photos/id/1084/200/300" },
+        { "value": "Music", "imageUrl": "https://picsum.photos/id/1084/200/300" },
+        { "value": "Museum", "imageUrl": "https://picsum.photos/id/1084/200/300" },
+        { "value": "Playground", "imageUrl": "https://picsum.photos/id/1084/200/300" },
+        { "value": "Trail", "imageUrl": "https://picsum.photos/id/1084/200/300" },
+        { "value": "Indoor Play", "imageUrl": "https://picsum.photos/id/1084/200/300" }
+      ]
+    },
+    {
+      "label": "Age",
+      "options": [
+        { "value": "Infant" },
+        { "value": "Toddler" },
+        { "value": "Preschool" },
+        { "value": "Kindergarten" }
+      ]
+    },
+    {
+      "label": "Town",
+      "options": [
+        { "value": "Boulder" },
+        { "value": "Longmont" },
+        { "value": "Louisville" },
+        { "value": "Broomfield" },
+        { "value": "Denver" },
+        { "value": "Lafayette" }
+      ]
+    },
+    {
+      "label": "Duration",
+      "options": [
+        { "value": "<1 hour" },
+        { "value": "0-3 hours" },
+        { "value": "3+ hours" }
+      ]
+    },
+    {
+      "label": "Seasonality",
+      "options": [
+        { "value": "Spring" },
+        { "value": "Summer" },
+        { "value": "Fall" },
+        { "value": "Winter" }
+      ]
+    },
+    {
+      "label": "Setting",
+      "options": [
+        { "value": "Indoor" },
+        { "value": "Outdoor" },
+        { "value": "Both" }
+      ]
+    }
+  ]
+  

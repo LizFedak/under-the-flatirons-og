@@ -1,0 +1,24 @@
+---
+import HeroImage from '../media/HeroImage.astro';
+
+export interface Props { post: any }
+const { post } = Astro.props;
+const d = post.data ?? {};
+const href = `/blog/${post.slug ?? post.id}/`;
+---
+
+<article class="headline-card">
+  {d.heroImage && (
+    <a href={href} aria-label={d.title}>
+      <HeroImage src={d.heroImage} alt={d.imageAlt ?? d.title} width={1200} height={675} class="hero" />
+    </a>
+  )}
+  <h2 class="hl-title"><a href={href}>{d.title}</a></h2>
+  {d.description && <p class="hl-dek">{d.description}</p>}
+</article>
+
+<style>
+  .headline-card .hero { width:100%; border-radius:12px; display:block; }
+  .hl-title { margin:.75rem 0 .25rem; font-size:clamp(1.5rem, 3vw, 2.25rem); line-height:1.1; }
+  .hl-dek { color:#525b70; margin:0; font-size:1rem; }
+</style>

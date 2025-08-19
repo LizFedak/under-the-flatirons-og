@@ -1,0 +1,188 @@
+--- 
+
+import FiltersList from "../../components/filter/FiltersList.astro";
+import ActivityCard from '../../components/filter/ActivityCard.astro';
+import activities from '../../../src/data/data.json';
+import filters from '../../../src/data/filters.json';
+import Header from "../../components/Header.astro";
+
+---
+
+<head>
+	<script>
+	// Google callback: wire Places Autocomplete + Enter-to-geocode
+	window.initMaps = function(){
+	  const addrInput = document.getElementById('addr');
+	  if (!addrInput) return;
+  
+	  const ac = new google.maps.places.Autocomplete(addrInput, {
+		fields: ['geometry'], types: ['geocode']
+	  });
+	  ac.addListener('place_changed', () => {
+		const place = ac.getPlace();
+		const loc = place?.geometry?.location;
+		if (loc) setOrigin({ lat: loc.lat(), lng: loc.lng() });
+	  });
+  
+	  // If user hits Enter on free text, geocode once
+	  const geocoder = new google.maps.Geocoder();
+	  addrInput.addEventListener('keydown', (e) => {
+		if (e.key === 'Enter') {
+		  e.preventDefault();
+		  const q = addrInput.value.trim();
+		  if (!q) return;
+		  geocoder.geocode({ address: q }, (res, status) => {
+			const g = res?.[0]?.geometry?.location;
+			if (status === 'OK' && g) setOrigin({ lat: g.lat(), lng: g.lng() });
+		  });
+		}
+	  });
+	};</script>
+</head>
+
+<header>
+
+<style>
+	.cards {
+	  --min: 260px;
+	  display: grid;
+	  gap: 1rem;
+	  grid-template-columns: repeat(4, 1fr);
+	  margin: 50px 0;
+	}
+	@media (max-width: 640px) {
+	  .cards { grid-template-columns: 1fr; } /* 1 per row mobile */
+	}
+	
+  </style>
+  </header>
+
+  <Header />
+<div id="filterContext" style="margin-top: 50px;">
+	<FiltersList filters={filters} />
+	<section class="cards">
+	{activities.map((item) => (
+	  <ActivityCard item={item} />
+	))}
+  	</section>
+</div>
+
+
+  <script src="//cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js" is:inline></script>
+  
+<script>
+  const options = {
+    valueNames: [
+      'title',
+	
+	{ data: ['type', 'age', 'town', 'duration', 'seasonality', 'setting'] }
+    ],
+    listClass: 'cards',
+    page: 20
+  };
+  const list = new List('filterContext', options);
+//   window._list = list; 
+ 
+	// Straight-line distance (haversine) in miles
+	const haversineMi = (a, b) => {
+	  const toRad = d => d*Math.PI/180, R = 3958.7613;
+	  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+	  const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+	  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+	  return 2 * R * Math.asin(Math.sqrt(h));
+	};
+  
+	// Set origin → compute distances → sort by distance
+	// function setOrigin(origin){
+	//   // 1) compute distance for each card (needs data-lat/lng)
+	//   const cards = document.querySelectorAll('#filterContext .cards .card');
+	//   cards.forEach(card => {
+	// 	const lat = parseFloat(card.getAttribute('data-lat'));
+	// 	const lng = parseFloat(card.getAttribute('data-lng'));
+	// 	const pill = card.querySelector('.distance-pill');
+	// 	if (Number.isFinite(lat) && Number.isFinite(lng)) {
+	// 	  const d = haversineMi(origin, { lat, lng });
+	// 	  card.setAttribute('data-distance', d.toFixed(2)); // for List.js
+	// 	  if (pill) { pill.textContent = `${d.toFixed(1)} mi`; pill.hidden = false; }
+	// 	} else {
+	// 	  // No coords → push to end and hide pill
+	// 	  card.setAttribute('data-distance', '999999');
+	// 	  if (pill) { pill.hidden = true; pill.textContent = ''; }
+	// 	}
+	//   });
+  
+	//   // 2) sort the rendered list by distance (closest first)
+	// //   const list = window._list;
+	// //   if (list) {
+    //   list.sort('', { // key is ignored when sortFunction is provided
+    //     sortFunction: (a, b) => {
+    //       const da = parseFloat(a.elm.getAttribute('data-distance'));
+    //       const db = parseFloat(b.elm.getAttribute('data-distance'));
+    //       const A = Number.isFinite(da) ? da : 1e9;  // push “no coords” to the end
+    //       const B = Number.isFinite(db) ? db : 1e9;
+    //       return A - B;
+    //     }
+    //   });
+    // 	// }
+	// }
+  
+	window.setOrigin = function setOrigin(origin){
+    const cards = document.querySelectorAll('#filterContext .cards .card');
+    cards.forEach(card => {
+      const lat = parseFloat(card.getAttribute('data-lat'));
+      const lng = parseFloat(card.getAttribute('data-lng'));
+      const pill = card.querySelector('.distance-pill');
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        const d = haversineMi(origin, { lat, lng });
+        card.setAttribute('data-distance', d.toFixed(2));
+        if (pill) { pill.textContent = `${d.toFixed(1)} mi`; pill.hidden = false; }
+      } else {
+        card.setAttribute('data-distance', '999999');
+        if (pill) { pill.hidden = true; pill.textContent = ''; }
+      }
+    });
+
+    list.sort('', {
+      sortFunction: (a, b) => {
+        const da = parseFloat(a.elm.getAttribute('data-distance'));
+        const db = parseFloat(b.elm.getAttribute('data-distance'));
+        return (Number.isFinite(da) ? da : 1e9) - (Number.isFinite(db) ? db : 1e9);
+      }
+    });
+  };
+
+const ctx  = document.getElementById('filterContext');
+	// const list = window._list;            // your existing List.js instance
+  
+
+function matchesCard(item, fo) {
+  const facets = ['type','age','town', 'duration', 'seasonality', 'setting']; // add more later
+//   console.log(item.values(), 'this')
+  return facets.every((key) => {
+	// does the list of selected options for that key include a value from the applicable options for the current item for that key?
+	let selectedForThatKey = fo[key]
+	if (selectedForThatKey.length === 0) { return true }
+	let trueForThisItem = item.values()[key].split(",")
+	// console.log(selectedForThatKey, '<-- selected for the key', trueForThisItem, 'being evlaed')
+	return selectedForThatKey.some(optt => {
+		return trueForThisItem.includes(optt)
+	})
+  });
+}
+	// 1) react to every selection change
+	ctx.addEventListener('filterschange', (e) => {
+	//   const fo = e.detail || {};     // { uid: [selectedValues], ... }
+	  // (optional) keep it global if you want elsewhere:
+	 let  fo = window.filterObject ;
+    list.filter(item => {
+		return matchesCard(item, fo)
+	})
+
+	});
+
+
+  </script>
+  
+
+
+  <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDOyoKlcUiUYhBblIw-YR-4UL_n2vniC2w&libraries=places&callback=initMaps"></script>

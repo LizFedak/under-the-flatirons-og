@@ -1,0 +1,21 @@
+---
+import { Image } from 'astro:assets';
+
+export interface Props {
+  src: any;          // ImageMetadata | string
+  alt?: string;
+  width?: number;
+  height?: number;
+  loading?: 'lazy' | 'eager';
+  class?: string;
+}
+
+const { src, alt = '', width = 960, height = 540, loading = 'lazy' } = Astro.props;
+const isMeta = src && typeof src === 'object' && 'src' in src;
+---
+
+{isMeta ? (
+  <Image src={src} width={width} height={height} alt={alt} loading={loading} class={Astro.props.class} />
+) : (
+  <img src={src} width={width} height={height} alt={alt} loading={loading} class={Astro.props.class} />
+)}

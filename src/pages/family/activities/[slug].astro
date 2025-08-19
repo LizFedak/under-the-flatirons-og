@@ -1,0 +1,63 @@
+---
+import activities from '../../../data/data.json'; // from .../family/activities to .../data
+
+export function getStaticPaths() {
+  if (!Array.isArray(activities)) {
+    console.error('[family/activities] src/data/data.json must be an array');
+    return [];
+  }
+
+  // inline slug logic, no slugify symbol
+  const toSlug = (name, idx, used) => {
+    const base = String(name ?? `item-${idx+1}`)
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || `item-${idx+1}`;
+
+    let s = base, n = 2;
+    while (used.has(s)) s = `${base}-${n++}`;
+    used.add(s);
+    return s;
+  };
+
+  const used = new Set();
+  return activities.map((item, i) => ({
+    params: { slug: toSlug(item?.Name, i, used) },
+    props:  { item }
+  }));
+}
+
+const { item } = Astro.props;
+
+// helper for outbound links
+const withProtocol = (u) => (u ? (/^https?:\/\//i.test(u) ? u : `https://${u}`) : '');
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{item?.Name ?? 'Not found'} — Boulder Kids</title>
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>{item?.Name ?? 'Not found'}</h1>
+
+      <!-- inline debug so we SEE the data that reached this page -->
+      <details style="margin:.75rem 0; border:1px solid #eee; padding:.5rem .75rem; border-radius:.5rem;">
+        <summary>Debug: raw item</summary>
+        <pre style="white-space:pre-wrap; font-size:.85rem;">{JSON.stringify(item, null, 2)}</pre>
+      </details>
+
+      {item?.Address && <p>{item.Address}</p>}
+      <p class="links">
+        {item?.Website && <a href={withProtocol(item.Website)} target="_blank" rel="noopener">Website</a>}
+        {item?.['Google Maps Link'] && <a href={withProtocol(item['Google Maps Link'])} target="_blank" rel="noopener">Google Maps</a>}
+      </p>
+    </main>
+  </body>
+</html>
+
+<style>
+  .wrap { max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+  .links { display:flex; gap:.75rem; }
+</style>

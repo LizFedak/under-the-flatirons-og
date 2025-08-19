@@ -1,0 +1,47 @@
+---
+export interface ImageOption {
+  value: string;
+  label?: string;
+  imageUrl?: string; // supports legacy mapping too
+  img?: string;
+  disabled?: boolean;
+}
+export interface Props {
+  id?: string;
+  label: string;
+  options: ImageOption[];
+  selectedValues?: string[];
+}
+const { id = crypto.randomUUID(), label, options, selectedValues = [] } = Astro.props as Props;
+const selected = new Set<string>(selectedValues);
+---
+
+<style>
+  .msf { display:block; width:100%; } /* full-row friendly */
+  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+  .imgList { 
+    display: flex; flex-wrap: wrap; gap: 10px; width: 100%; justify-content: center;box-sizing: border-box;}
+  .image-option { display:flex; flex-direction:column; align-items:center; gap:.35rem; cursor:pointer; padding:.5rem; border-radius: .75rem; user-select:none; }
+  .image-option input[type="checkbox"] { position:absolute; opacity:0; pointer-events:none; }
+  .image-option img { border:3px solid transparent; border-radius:50%; transition:border-color .2s ease; width:60px; height:60px; object-fit:cover; background:#f3f4f6; }
+  .image-option input[type="checkbox"]:checked + img { border-color:#2563eb; }
+  .image-option span { font-size:.85rem; color:#111827; text-align:center; max-width:90px; }
+</style>
+
+<div class="msf" id={id} data-component="ImageMultiSelectFilter" data-uid={id} data-variant="image">
+  <span class="sr-only" data-role="title">{label}</span>
+  <div class="imgList" id={`${id}-imgList`} role="listbox" aria-multiselectable="true">
+    {options.map((opt) => {
+      const isChecked = selected.has(opt.value);
+      const src = opt.imageUrl ?? opt.img ?? '';
+      return (
+        <label class="image-option">
+          <input type="checkbox" value={opt.value} checked={isChecked} disabled={opt.disabled} />
+          <img src={src} alt={opt.label ?? opt.value} loading="lazy" />
+          <span>{opt.label ?? opt.value}</span>
+        </label>
+      );
+    })}
+  </div>
+</div>

@@ -1,0 +1,46 @@
+---
+// src/components/posts/PostCard.astro
+import type { CollectionEntry } from 'astro:content';
+import { Image } from 'astro:assets';
+
+export interface Props {
+  post: CollectionEntry<'blog'> | any; // works with your collection entries
+  href?: string; // optional override
+}
+
+const { post, href } = Astro.props;
+const data = post.data ?? {};
+const link = href ?? `/blog/${post.slug ?? post.id}/`;
+
+const hero = data.heroImage; // could be string or ImageMetadata
+const hasImageMetadata = typeof hero === 'object' && hero && 'src' in hero;
+---
+
+<article class="wrap">
+  {hero && (
+    <a class="image" href={link} aria-label={data.title}>
+      {hasImageMetadata ? (
+        <Image src={hero} width={800} height={450} alt={data.heroAlt ?? data.title} />
+      ) : (
+        <img src={hero} alt={data.heroAlt ?? data.title} loading="lazy" />
+      )}
+    </a>
+  )}
+
+  <div class="content">
+    {data.tag && <span class="pill">{data.tag}</span>}
+    <h2 class="title"><a href={link}>{data.title}</a></h2>
+    {data.description && <p class="description">{data.description}</p>}
+    {data.author.name && <p class="byline">By <span>{data.author.name}</span></p>}
+  </div>
+</article>
+
+<style>
+  .wrap { max-width: 720px; margin-inline: auto; }
+  .image { display:block; overflow:hidden; border-radius:8px; aspect-ratio:16/9; background:#f5f6f7; }
+  .content { margin-top:.75rem; }
+  .pill { font-size:.75rem; background:#eef2ff; color:#111827; padding:.15rem .5rem; border-radius:999px; }
+  .title { margin:.25rem 0;  }
+  .description { color:#525b70; margin:0; }
+  .byline { color:#6b7280; margin:.5rem 0 0; }
+</style>

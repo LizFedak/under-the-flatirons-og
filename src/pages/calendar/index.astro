@@ -1,0 +1,77 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+
+
+function formatDate(date: Date) {
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+const posts = (await getCollection('events'))
+  .sort((a, b) => b.data.eventDate.valueOf() - a.data.eventDate.valueOf()) // Sort by eventDate
+  .map(post => ({
+    ...post,
+    formattedDate: formatDate(post.data.eventDate),  // Format eventDate
+  }));
+---
+
+
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js" defer></script> <!-- `defer` ensures the script is loaded after the page -->
+
+		<style>
+			/* #calendar-list ul li {
+				display: flex;
+			} */
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section>
+				<div id="calendar-list">
+					<input class="search" placeholder="Search for events" />
+					<ul class="list grid gap-[20px]">
+					  {posts.map((event) => (
+						<li class="flex flex-row border-solid border-1 p-5 rounded-lg gap-[20px]">
+							
+							<div class="w-3/4">
+						  <p class="event-time">{event.data.eventTime}</p>
+						  <h3 class="event-title">{event.data.title}</h3>
+						  <p class="event-date">{event.formattedDate}</p>
+						</div>
+						<div class="w-1/4">
+						  {event.data.heroImage && (
+							<Image width={300} height={200} src={event.data.heroImage} alt={event.data.title} />
+						  )}
+						  </div>
+						
+						</li>
+					  ))}
+					</ul>
+				  </div>
+			</section>
+		</main>
+		<Footer />
+	</body>
+	<script>
+		let options = {listClass: "list",
+		valueNames: ['event-title'],
+		}
+		new List("calendar-list", options)
+	</script>
+</html>
+

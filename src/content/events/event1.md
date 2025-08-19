@@ -1,13 +1,10 @@
 ---
-title: 'First post featured news'
+title: 'Boulder County Fair'
 description: 'Lorem ipsum dolor sit amet'
-pubDate: 'Jul 08 2022'
+eventDate: 'Jul 08 2022'
 heroImage: '../../assets/blog-placeholder-3.jpg'
-tag: 'news'
-imageAlt: 'sdfsdf'
-author: liz-fedak
-featured: true
-
+location: "Boulder, CO"
+eventTime: "6:00 pm"
 ---
 
 ## this is a post

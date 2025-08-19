@@ -1,0 +1,199 @@
+---
+type ActivityItem = {
+  Name: string;
+  Address?: string;
+  Website?: string;
+  "Google Maps Link"?: string;
+  Hours?: string;
+  Latitude?: string;
+  Longitude?: string;
+  Description?: string;
+  "Age"?: string;
+  Cost?: string;
+  "Type"?: string;
+  "Duration"?: string;
+  "Advance Booking Required"?: string;
+  "Changing Table"?: string;
+  "Nursing-Friendly Area"?: string;
+  "Last Verified Date"?: string;
+  "Record ID"?: string;
+  // optional images (support a few common keys)
+  Image?: string;
+  "Image URL"?: string;
+  imageUrl?: string;
+  img?: string;
+  "Seasonality": string;
+  "Setting": string;
+  "Town": string;
+};
+
+type EventMeta = { dateLabel?: string; timeLabel?: string };
+
+interface Props {
+  item: ActivityItem;
+  href?: string;        // link to details page
+  event?: EventMeta | null;
+}
+
+const { item, href, event = null } = Astro.props as Props;
+
+const slug = (s: string) =>
+  (s || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+const withProtocol = (u?: string) => u ? (/^https?:\/\//i.test(u) ? u : `https://${u}`) : "";
+
+const splitCSV = (s?: string) => (s || "").split(",").map(v => v.trim()).filter(Boolean);
+const compactLines = (s?: string) => (s || "").split(/\n+/).map(x => x.trim()).filter(Boolean);
+
+const id = item["Record ID"] || slug(item.Name);
+const detailsUrl = href || `/family/activities/${slug(item.Name)}`;
+
+
+
+const type = splitCSV(item["Type"]);          // priority badges
+const ages = splitCSV(item["Age"]);
+const hoursSegments = compactLines(item.Hours);
+
+const yes = (v?: string) => /^y(es)?$/i.test(v || "");
+const mapUrl = withProtocol(item["Google Maps Link"]);
+const siteUrl = withProtocol(item.Website);
+
+const imgSrc =
+  item.Image || item["Image URL"] || item.imageUrl || item.img || "";
+
+const initial = (item.Name || "?").trim().charAt(0).toUpperCase() || "?";
+---
+
+
+
+<article class="card" data-id={id}
+data-lat={item.Latitude}
+  data-lng={item.Longitude}
+  data-type={item["Type"] ?? ""}
+  data-age={item["Age"] ?? ""}
+  data-cost={item["Cost"] ?? ""}
+  data-town={item["Town"] ?? ""}
+  data-duration={item["Duration"] ?? ""}
+  data-seasonality={item["Seasonality"] ?? ""}
+  data-setting={item["Setting"] ?? ""}>
+
+
+  <figure class="thumb">
+    {imgSrc
+      ? <img src={imgSrc} alt={item.Name} loading="lazy" decoding="async" />
+      : <div class="ph" aria-hidden="true">{initial}</div>
+    }
+    <span class="distance-pill" hidden></span>   <!-- distance text goes here -->
+  </figure>
+
+  <div class="body">
+    <h3 class="title"><a href={detailsUrl}>{item.Name}</a></h3>
+
+    {(event?.dateLabel || event?.timeLabel) && (
+      <div class="event">
+        {event?.dateLabel && <span class="chip">{event.dateLabel}</span>}
+        {event?.timeLabel && <span class="chip">{event.timeLabel}</span>}
+      </div>
+    )}
+
+    <!-- Priority badges: Type first, then Cost, Ages, Duration, Booking -->
+    <div class="badges">
+      {type.slice(0, 3).map(t => <span class="b b--type">{t}</span>)}
+      {item.Cost && <span class="b">{item.Cost}</span>}
+      {ages[0] && <span class="b">Ages {ages[0]}</span>}
+      {item["Duration"] && <span class="b">{item["Duration"]}</span>}
+      {item["Advance Booking Required"] && (
+        <span class="b">{item["Advance Booking Required"] === 'Yes' ? 'Booking required' : 'Drop-in OK'}</span>
+      )}
+    </div>
+
+    <dl class="facts">
+      {item.Address && (
+        <>
+          <dt>Address</dt>
+          <dd>
+            {item.Address}
+            {mapUrl && <> <a class="link" href={mapUrl} target="_blank" rel="noopener">Map</a></>}
+          </dd>
+        </>
+      )}
+    </dl>
+
+    <ul class="quick">
+
+      
+      {yes(item["Changing Table"]) ?
+      <li title="Changing Table">
+        <span class="dot yes"></span>Changing Table</li> : ""}
+
+      {yes(item["Nursing-Friendly Area"]) ?
+      <li title="Nursing-friendly">
+        <span class="dot yes"></span>Nursing-friendly</li> : ""}
+
+
+    </ul>
+
+    <div class="links">
+      {siteUrl && <a class="link" href={siteUrl} target="_blank" rel="noopener">Website</a>}
+      <a href={detailsUrl}>Details</a>
+      {item["Last Verified Date"] && <span class="verify">Verified {item["Last Verified Date"]}</span>}
+    </div>
+  </div>
+</article>
+
+<style>
+  .card {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: .9rem;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  }
+
+  .thumb { aspect-ratio: 16/9; background:#f3f4f6; overflow:hidden; margin:0; }
+  .thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+  .ph {
+    width:100%; height:100%;
+    display:grid; place-items:center;
+    background: linear-gradient(135deg, #eef2ff, #f1f5f9);
+    color:#374151; font-weight:700; font-size:2.25rem;
+  }
+
+  .body { padding: .9rem .95rem 1rem; display:grid; gap:.55rem; }
+  .title { margin:0; font-size:1.05rem; line-height:1.25; }
+  .title a { color:#111827; text-decoration:none; }
+  .title a:hover { text-decoration:underline; }
+
+  .event { display:flex; flex-wrap:wrap; gap:.35rem; }
+  .chip { background:#ecfeff; border:1px solid #a5f3fc; color:#0e7490; padding:.05rem .4rem; border-radius:.5rem; font-size:.75rem; }
+
+  .badges { display:flex; flex-wrap:wrap; gap:.35rem; }
+  .b { background:#f3f4f6; color:#111827; border:1px solid #e5e7eb; border-radius:.5rem; padding:.1rem .45rem; font-size:.75rem; height: min-content;}
+  .b--type { background:#eef2ff; border-color:#e0e7ff; color:#3730a3; font-weight:600; }
+
+  .facts { display:grid; grid-template-columns:auto 1fr; gap:.15rem .6rem; }
+  .facts dt { color:#6b7280; font-size:.78rem; }
+  .facts dd { margin:0; font-size:.9rem; color:#111827; }
+  /* hours segments: encoding-proof separator */
+  .seglist { display:flex; flex-wrap:wrap; gap:.25rem .25rem; }
+  .seglist .seg:not(:first-child)::before { content:'\00B7'; margin: 0 .45rem; opacity:.6; }
+
+  .quick { display:flex; gap:1rem; margin:0; padding:0; list-style:none; color:#374151; font-size:.85rem; }
+  .dot { width:.6rem; height:.6rem; border-radius:50%; display:inline-block; margin-right:.4rem; vertical-align:-.1rem; }
+  .dot.yes { background:#10b981; }   /* green */
+  .dot.no  { background:#d1d5db; }   /* gray */
+
+  .links { display:flex; gap:.75rem; align-items:center; justify-content:space-between; margin-top:.15rem; }
+  .links .link { color:#2563eb; text-decoration:none; }
+  .links .link:hover { text-decoration:underline; }
+  .verify { color:#6b7280; font-size:.75rem; margin-left:auto; }
+
+    .thumb{ position:relative; } /* so the pill can sit in the corner */
+    .distance-pill{
+      position:absolute; top:.6rem; right:.6rem;
+      background:#111827; color:#fff; font-size:.75rem;
+      padding:.15rem .45rem; border-radius:.4rem; opacity:.92;
+    }
+  </style>

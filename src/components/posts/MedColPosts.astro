@@ -1,0 +1,43 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+export interface Props {
+  posts: Array<CollectionEntry<'blog'>> | Array<any>;
+  // expects each item to have .data.title, .data.description, .data.heroImage (string), and .slug (preferred) or .id
+}
+
+const { posts = [] } = Astro.props;
+const hrefFor = (post: any) => `/blog/${post.slug ?? post.id}/`;
+---
+
+<section class="med-col">
+  {posts.map((post) => (
+    <a class="card" href={hrefFor(post)}>
+      {post?.data?.heroImage && (
+        <img
+          src={post.data.heroImage}
+          width="480"
+          height="270"
+          alt={post.data.heroAlt ?? post.data.title}
+          loading="lazy"
+        />
+      )}
+      <h3 class="title">{post.data.title}</h3>
+      {post.data.description && <p class="excerpt">{post.data.description}</p>}
+    </a>
+  ))}
+</section>
+
+<style>
+  .med-col {
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:1.25rem;
+    margin-top:2rem;
+  }
+  .card { display:block; text-decoration:none; color:inherit; }
+  .card img { display:block; width:100%; border-radius:10px; }
+  .title { margin:.5rem 0 .25rem; font-size:1.125rem; line-height:1.2; }
+  .excerpt { color:#606f9f; margin:0; }
+  @media (max-width:720px){ .med-col{ grid-template-columns:1fr; } }
+</style>
