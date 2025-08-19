@@ -1,7 +1,7 @@
 ---
 title: 'this is another random blog post'
 description: 'Here is a sample of some basic Markdown syntax that can be used when writing Markdown content in Astro.'
-pubDate: 'Jun 19 2024'
+pubDate: '2024-06-19'
 heroImage: '../../assets/blog-placeholder-1.jpg'
 tag: 'news'
 imageAlt: 'sdfsdf'
