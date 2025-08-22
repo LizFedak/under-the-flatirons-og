@@ -40,6 +40,16 @@ const selected = new Set<string>(selectedValues);
   .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
   .tagrow { display:flex; flex-wrap:wrap; gap:.35rem; }
   .tag { background:#eef2ff; color:#3730a3; padding:.1rem .4rem; border-radius:.5rem; font-size:.75rem; }
+
+  /* .image-option input[type="checkbox"]:nth-child(5n+1):checked + img { border-color:red; } */
+
+/* cycle 5 colors by position: 1–5, then repeat */
+
+/* apply the per-item color only when that item's checkbox is checked */
+/* .image-option input[type="checkbox"]:checked + img {
+  border-color: var(--sel);
+} */
+
 </style>
 
 <div class="msf hoverable" id={id} data-component="MultiSelectFilter" data-uid={id} data-variant="default">

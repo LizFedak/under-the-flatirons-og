@@ -16,6 +16,26 @@ const imageFilters   = filters.filter((f) => (f as any).variant === 'image');
 const defaultFilters = filters.filter((f) => (f as any).variant !== 'image');
 ---
 
+
+<style>
+
+.image-option.image-option:nth-child(2) input[type="checkbox"]:checked + img {
+  border-color: #16a34a; /* Color 2 */
+}
+.image-option:nth-child(3) input[type="checkbox"]:checked + img {
+  border-color: #dc2626; /* Color 3 */
+}
+.image-option:nth-child(4) input[type="checkbox"]:checked + img {
+  border-color: #9333ea; /* Color 4 */
+}
+/* .image-option:nth-of-type(1n) input[type="checkbox"]:checked + img {
+  border-color: #f59e0b; /* Color 5 */
+
+
+
+
+  .image-option span { font-size:.85rem; color:#111827; text-align:center; max-width:90px; }
+</style>
 <section id="filters" aria-label="filters">
 
   <div class="topBar">

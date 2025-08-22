@@ -188,3 +188,12 @@ hr {
 	/* added line to stop words getting smushed together (as they go onto separate lines and some screen readers do not understand line feeds as a space */
 	white-space: nowrap;
 }
+
+
+/* 
+  .imgList > .image-option:nth-of-type(5n+2) > input[type="checkbox"]:checked + img { border-color: #16a34a; }
+  .imgList > .image-option:nth-of-type(5n+3) > input[type="checkbox"]:checked + img { border-color: #dc2626; }
+  .imgList > .image-option:nth-of-type(5n+4) > input[type="checkbox"]:checked + img { border-color: #9333ea; } */
+
+
+ input[type="checkbox"]:checked + img { border-color: #9333ea; }
