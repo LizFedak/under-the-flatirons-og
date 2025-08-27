@@ -1,0 +1,375 @@
+---
+
+import type { APIContext } from "astro";
+
+// Minimal types for Postman v2.1; flexible enough for most exports
+type PMUrl = {
+  raw?: string;
+  host?: string[];
+  path?: (string | number)[];
+  query?: { key: string; value?: string; description?: string }[];
+  variable?: { key: string; value?: string }[];
+};
+
+type PMHeader = { key: string; value?: string; description?: string; disabled?: boolean };
+
+type PMBody = {
+  mode?: "raw" | "urlencoded" | "formdata" | "graphql" | "file";
+  raw?: string;
+  options?: { raw?: { language?: string } };
+  urlencoded?: { key: string; value?: string; description?: string; disabled?: boolean }[];
+  formdata?: { key: string; value?: string; type?: string; description?: string; disabled?: boolean }[];
+  graphql?: { query?: string; variables?: string };
+  file?: any;
+};
+
+type PMRequest = {
+  method?: string;
+  header?: PMHeader[];
+  url?: string | PMUrl;
+  body?: PMBody;
+  description?: string;
+  auth?: any;
+};
+
+type PMResponse = {
+  name?: string;
+  originalRequest?: PMRequest;
+  code?: number;
+  status?: string;
+  header?: PMHeader[];
+  body?: string;
+};
+
+type PMItem = {
+  name: string;
+  item?: PMItem[]; // folder
+  request?: PMRequest; // request
+  response?: PMResponse[];
+  description?: string;
+  _postman_isSubFolder?: boolean; // not official; sometimes present
+};
+
+type PMCollection = {
+  info?: { name?: string; description?: string; schema?: string };
+  item: PMItem[];
+  variable?: { key: string; value?: string; type?: string; description?: string }[];
+  auth?: any;
+};
+
+const { collection } = Astro.props as { collection: PMCollection };
+
+// Helpers
+const isFolder = (it: PMItem) => Array.isArray(it.item);
+const safe = (s?: string) => (s ?? "").toString();
+const slug = (txt: string, extra = "") =>
+  (txt || "section")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    + (extra ? "-" + extra : "");
+
+const methodColor = (m?: string) => {
+  switch ((m || "").toUpperCase()) {
+    case "GET": return "var(--pm-get)";
+    case "POST": return "var(--pm-post)";
+    case "PUT": return "var(--pm-put)";
+    case "PATCH": return "var(--pm-patch)";
+    case "DELETE": return "var(--pm-delete)";
+    default: return "var(--pm-default)";
+  }
+};
+
+function formatUrl(u?: string | PMUrl) {
+  if (!u) return "";
+  if (typeof u === "string") return u;
+  if (u.raw) return u.raw;
+  const host = (u.host || []).join(".");
+  const path = (u.path || []).join("/");
+  return [host, path].filter(Boolean).join("/") || "";
+}
+
+function kvTable(rows?: { key: string; value?: string; description?: string; disabled?: boolean }[]) {
+  if (!rows || !rows.length) return null;
+  const active = rows.filter(r => !r.disabled);
+  if (!active.length) return null;
+  return active.map((r) => ({
+    key: r.key,
+    value: r.value ?? "",
+    description: r.description ?? ""
+  }));
+}
+
+function headersTable(hdrs?: PMHeader[]) {
+  if (!hdrs || !hdrs.length) return null;
+  const active = hdrs.filter(h => !h.disabled);
+  if (!active.length) return null;
+  return active.map(h => ({
+    key: h.key,
+    value: h.value ?? "",
+    description: h.description ?? ""
+  }));
+}
+
+function renderBodySummary(body?: PMBody) {
+  if (!body) return { label: "none", language: "", content: "" };
+  switch (body.mode) {
+    case "raw":
+      return {
+        label: "raw",
+        language: body.options?.raw?.language || "json",
+        content: body.raw ?? ""
+      };
+    case "urlencoded":
+      return {
+        label: "x-www-form-urlencoded",
+        language: "",
+        content: JSON.stringify((body.urlencoded || []).reduce((acc: any, r) => {
+          if (!r.disabled) acc[r.key] = r.value ?? "";
+          return acc;
+        }, {}), null, 2)
+      };
+    case "formdata":
+      return {
+        label: "multipart/form-data",
+        language: "",
+        content: (body.formdata || [])
+          .filter(f => !f.disabled)
+          .map(f => `${f.key}: ${f.value ?? ""}${f.type ? ` (${f.type})` : ""}`)
+          .join("\n")
+      };
+    case "graphql":
+      return {
+        label: "graphql",
+        language: "graphql",
+        content: (body.graphql?.query || "") + (body.graphql?.variables ? `\n\n# variables\n${body.graphql?.variables}` : "")
+      };
+    default:
+      return { label: "none", language: "", content: "" };
+  }
+}
+
+function walk(items: PMItem[], trail: string[] = []) {
+  // Flattens into sections preserving folder hierarchy
+  const out: { type: "folder" | "request"; path: string[]; item: PMItem }[] = [];
+  for (const it of items) {
+    if (isFolder(it)) {
+      out.push({ type: "folder", path: [...trail], item: it });
+      out.push(...walk(it.item!, [...trail, it.name]));
+    } else if (it.request) {
+      out.push({ type: "request", path: trail, item: it });
+    }
+  }
+  return out;
+}
+
+const flat = walk(collection.item || []);
+const toc = flat.filter(x => x.type === "request").map((x) => {
+  const req = x.item.request!;
+  const id = slug([...x.path, x.item.name].join("-"));
+  const method = (req.method || "").toUpperCase();
+  return { id, name: x.item.name, path: x.path, method };
+});
+---
+
+<style>
+  /* Minimal, framework-agnostic styling (works without Tailwind) */
+  :host, .pm-docs { --pm-bg: #0b0c10; --pm-panel: #12141a; --pm-muted: #9aa4af; --pm-fg: #e6edf3; --pm-border: #253041;
+    --pm-get:#2ea043; --pm-post:#1f6feb; --pm-put:#a371f7; --pm-patch:#d29922; --pm-delete:#f85149; --pm-default:#8b949e; }
+  .pm-docs { display: grid; grid-template-columns: 280px 1fr; gap: 1.25rem; color: var(--pm-fg); background: var(--pm-bg); }
+  .pm-sidebar { position: sticky; top: 1rem; align-self: start; max-height: calc(100vh - 2rem); overflow: auto; padding: 1rem; background: var(--pm-panel); border: 1px solid var(--pm-border); border-radius: 12px; }
+  .pm-sidebar h3 { margin: 0 0 .5rem; font-size: .95rem; letter-spacing: .02em; color: var(--pm-muted); }
+  .pm-toc a { display: block; padding: .35rem .5rem; border-radius: 8px; text-decoration: none; color: var(--pm-fg); border: 1px solid transparent; }
+  .pm-toc a:hover { background: rgba(255,255,255,.04); border-color: var(--pm-border); }
+  .pm-chip { font-weight: 600; font-size: .7rem; padding: .1rem .4rem; border-radius: 6px; margin-right: .4rem; color: #fff; }
+  .pm-main { padding: .5rem 0 2rem; }
+  .pm-panel { background: var(--pm-panel); border: 1px solid var(--pm-border); border-radius: 12px; padding: 1rem; margin: 0 0 1rem; }
+  .pm-h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+  .pm-desc { color: var(--pm-muted); white-space: pre-wrap; }
+  .pm-folder { margin: 1.5rem 0 .5rem; font-size: 1.1rem; color: var(--pm-muted); }
+  .pm-req { scroll-margin-top: 1rem; }
+  .pm-req h3 { margin: .2rem 0 .6rem; font-size: 1.1rem; }
+  .pm-row { display: grid; grid-template-columns: 1fr; gap: .75rem; }
+  @media (min-width: 900px) { .pm-row { grid-template-columns: 1fr 1fr; } }
+  .pm-kv { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .pm-kv th, .pm-kv td { border: 1px solid var(--pm-border); padding: .4rem .5rem; text-align: left; vertical-align: top; }
+  .pm-kv th { background: rgba(255,255,255,.04); color: var(--pm-muted); font-weight: 600; }
+  .pm-code { background: #0a0d14; border: 1px solid var(--pm-border); border-radius: 10px; padding: .75rem; overflow: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: .85rem; }
+  details.pm-expander { border: 1px solid var(--pm-border); border-radius: 10px; padding: .6rem .8rem; background: rgba(255,255,255,.02); }
+  details.pm-expander + details.pm-expander { margin-top: .5rem; }
+  details.pm-expander summary { cursor: pointer; font-weight: 600; }
+  .pm-badge { display: inline-block; padding: .1rem .4rem; font-size: .7rem; border-radius: 6px; border: 1px solid var(--pm-border); color: var(--pm-muted); margin-left: .5rem; }
+</style>
+
+<div class="pm-docs">
+  <aside class="pm-sidebar">
+    <h3>{collection.info?.name || "API Collection"}</h3>
+    {collection.info?.description && (<p class="pm-desc" set:html={collection.info.description} />)}
+    {collection.variable && collection.variable.length > 0 && (
+      <div class="pm-panel" style="margin-top:.75rem;">
+        <strong>Collection Variables</strong>
+        <table class="pm-kv" style="margin-top:.5rem;">
+          <thead><tr><th>Key</th><th>Value</th><th>Description</th></tr></thead>
+          <tbody>
+            {collection.variable.map(v => (
+              <tr>
+                <td><code>{v.key}</code></td>
+                <td>{v.value ?? ""}</td>
+                <td>{v.description ?? ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    <div class="pm-panel">
+      <strong>Endpoints</strong>
+      <div class="pm-toc" style="margin-top:.5rem;">
+        {toc.map(t => (
+          <a href={"#"+t.id} title={[...t.path, t.name].join(" / ")}>
+            <span class="pm-chip" style={`background:${methodColor(t.method)}`}>{t.method || "REQ"}</span>
+            {t.name}
+          </a>
+        ))}
+      </div>
+    </div>
+  </aside>
+
+  <main class="pm-main">
+    <div class="pm-panel">
+      <h1 class="pm-h1">{collection.info?.name || "API Documentation"}</h1>
+      {collection.info?.description && <p class="pm-desc" set:html={collection.info.description} />}
+      {collection.auth && (
+        <p class="pm-desc"><span class="pm-badge">Auth at collection level</span> This collection defines an auth scheme. Individual requests may override it.</p>
+      )}
+    </div>
+
+    {/* Render folders and requests in-order */}
+    {
+      flat.map((node, idx) => {
+        if (node.type === "folder") {
+          const f = node.item;
+          return (
+            <div class="pm-folder">
+              📁 {f.name}
+              {f.description && <div class="pm-desc" set:html={f.description} />}
+            </div>
+          );
+        }
+
+        const it = node.item;
+        const req = it.request!;
+        const responses = it.response || [];
+        const id = slug([...node.path, it.name].join("-"));
+        const url = formatUrl(req.url);
+        const queryRows = typeof req.url === "object" ? kvTable(req.url.query) : null;
+        const pathVars = typeof req.url === "object" ? kvTable(req.url.variable as any) : null;
+        const headers = headersTable(req.header);
+        const body = renderBodySummary(req.body);
+        const hasAnything =
+          (headers && headers.length) || (queryRows && queryRows.length) || (pathVars && pathVars.length) || body.content;
+
+        return (
+          <section id={id} class="pm-panel pm-req">
+            <h3>
+              <span class="pm-chip" style={`background:${methodColor(req.method)}`}>{(req.method || "REQ").toUpperCase()}</span>
+              {it.name}
+            </h3>
+            {req.description && <p class="pm-desc" set:html={req.description} />}
+
+            <div class="pm-code" style="margin:.5rem 0 .75rem;">
+              <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                <strong>Request</strong>
+                <span class="pm-badge">{(req.method || "REQ").toUpperCase()}</span>
+                <code style="word-break:break-all">{url || "(no URL set)"}</code>
+              </div>
+            </div>
+
+            {hasAnything && (
+              <div class="pm-row">
+                {headers && (
+                  <div>
+                    <h4 style="margin:.25rem 0 .4rem;">Headers</h4>
+                    <table class="pm-kv">
+                      <thead><tr><th>Key</th><th>Value</th><th>Description</th></tr></thead>
+                      <tbody>
+                        {headers.map(h => (
+                          <tr><td><code>{h.key}</code></td><td>{h.value}</td><td>{h.description}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {queryRows && (
+                  <div>
+                    <h4 style="margin:.25rem 0 .4rem;">Query Params</h4>
+                    <table class="pm-kv">
+                      <thead><tr><th>Key</th><th>Value</th><th>Description</th></tr></thead>
+                      <tbody>
+                        {queryRows.map(q => (
+                          <tr><td><code>{q.key}</code></td><td>{q.value}</td><td>{q.description}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {pathVars && (
+                  <div>
+                    <h4 style="margin:.25rem 0 .4rem;">Path Variables</h4>
+                    <table class="pm-kv">
+                      <thead><tr><th>Key</th><th>Value</th><th>Description</th></tr></thead>
+                      <tbody>
+                        {pathVars.map(v => (
+                          <tr><td><code>{v.key}</code></td><td>{v.value}</td><td>{v.description}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {body.content && (
+                  <div style="grid-column: 1 / -1;">
+                    <h4 style="margin:.25rem 0 .4rem;">Body <span class="pm-badge">{body.label}</span> {body.language && <span class="pm-badge">{body.language}</span>}</h4>
+                    <pre class="pm-code"><code>{body.content}</code></pre>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Responses / Examples */}
+            {responses.length > 0 && (
+              <div style="margin-top:.75rem;">
+                <h4 style="margin:.25rem 0 .4rem;">Responses & Examples</h4>
+                {responses.map((r, i) => (
+                  <details class="pm-expander" open={i === 0}>
+                    <summary>
+                      {r.name || r.status || `Example ${i+1}`} {typeof r.code === "number" && <span class="pm-badge">HTTP {r.code}</span>}
+                    </summary>
+                    {r.header && r.header.length > 0 && (
+                      <div style="margin:.5rem 0;">
+                        <table class="pm-kv">
+                          <thead><tr><th>Header</th><th>Value</th><th>Description</th></tr></thead>
+                          <tbody>
+                            {(r.header || []).map(h => (
+                              <tr><td><code>{h.key}</code></td><td>{h.value ?? ""}</td><td>{h.description ?? ""}</td></tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                    {r.body && (
+                      <pre class="pm-code"><code>{r.body}</code></pre>
+                    )}
+                  </details>
+                ))}
+              </div>
+            )}
+          </section>
+        );
+      })
+    }
+  </main>
+</div>

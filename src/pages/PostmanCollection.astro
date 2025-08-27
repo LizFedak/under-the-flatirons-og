@@ -1,0 +1,283 @@
+---
+export const prerender = true;
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import PostmanCollectionDocs from '../components/PostmanCollectionDocs.astro';
+
+const myCollectionJson = {
+	"info": {
+		"_postman_id": "f76c19de-d40a-42e0-8e4d-68fc4a9f2875",
+		"name": "Airtable",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "9474696"
+	},
+	"item": [
+		{
+			"name": "airtable",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.collectionVariables.set('model', pm.response.json().fields.Name);",
+							"console.log(pm.collectionVariables.get('model'))"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": ""
+					}
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer YOUR_PERSONAL_ACCESS_TOKEN",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "https://api.airtable.com/v0/{{base_id}}/{{table_id}}/{{record_id}}"
+			},
+			"response": [
+				{
+					"name": "All Fields",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": "https://api.airtable.com/v0/appaEpNPIcJAPEdnz/{{table_id}}/{{record_id}}"
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": null,
+					"header": [
+						{
+							"key": "Date",
+							"value": "Wed, 13 Aug 2025 01:04:50 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Content-Length",
+							"value": "576"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "AWSALBTG=F1RRH+wWRyFWXkKtGC2Awdeecmb3ynZwzcmuTF5UTITa3sXbg9355wIAGdO/z3XFvswrXRzAefrg1WXWx3/6ma85IiwV4W3cBCcGuXvnlkVQpusk2JyM6cWxoJOzncKeLWCKf8cZpzVLdCpXoW/OA/1s3WqjmcKU/eGA+qwYt8hyN8m7Tfo=; Expires=Wed, 20 Aug 2025 01:04:49 GMT; Path=/"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "AWSALBTGCORS=F1RRH+wWRyFWXkKtGC2Awdeecmb3ynZwzcmuTF5UTITa3sXbg9355wIAGdO/z3XFvswrXRzAefrg1WXWx3/6ma85IiwV4W3cBCcGuXvnlkVQpusk2JyM6cWxoJOzncKeLWCKf8cZpzVLdCpXoW/OA/1s3WqjmcKU/eGA+qwYt8hyN8m7Tfo=; Expires=Wed, 20 Aug 2025 01:04:49 GMT; Path=/; SameSite=None; Secure"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "brw=brwkEBEGNPkqsrViu; h=/; expires=Thu, 13 Aug 2026 01:04:49 GMT; domain=.airtable.com; samesite=none; secure"
+						},
+						{
+							"key": "Set-Cookie",
+							"value": "brwConsent=opt-in; h=/; expires=Wed, 13 Aug 2025 01:09:49 GMT; domain=.airtable.com; samesite=none; secure"
+						},
+						{
+							"key": "Server",
+							"value": "Tengine"
+						},
+						{
+							"key": "Strict-Transport-Security",
+							"value": "max-age=31536000; includeSubDomains; preload"
+						},
+						{
+							"key": "access-control-allow-origin",
+							"value": "*"
+						},
+						{
+							"key": "access-control-allow-methods",
+							"value": "DELETE,GET,OPTIONS,PATCH,POST,PUT"
+						},
+						{
+							"key": "access-control-allow-headers",
+							"value": "authorization,content-length,content-type,user-agent,x-airtable-application-id,x-airtable-user-agent,x-api-version,x-requested-with"
+						},
+						{
+							"key": "X-Frame-Options",
+							"value": "DENY"
+						},
+						{
+							"key": "X-Content-Type-Options",
+							"value": "nosniff"
+						},
+						{
+							"key": "Vary",
+							"value": "Accept-Encoding"
+						},
+						{
+							"key": "content-encoding",
+							"value": "gzip"
+						},
+						{
+							"key": "airtable-uncompressed-content-length",
+							"value": "888"
+						},
+						{
+							"key": "airtable-datacenter-regions",
+							"value": "us-east-1"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"id\": \"recOZQEKC9Xl24s85\",\n    \"createdTime\": \"2025-08-12T20:36:54.000Z\",\n    \"fields\": {\n        \"Name\": \"Model\",\n        \"Hours\": \"8am-12pm\",\n        \"Address\": \"2500 Kohler Dr, Boulder, CO 80305\",\n        \"Website\": \"www.site.com\",\n        \"Google Maps Link\": \"google address\",\n        \"Description\": \"this is a description\\n\",\n        \"Food Options\": [\n            \"Vending machine\",\n            \"BYOF\",\n            \"Cafe\",\n            \"Seating\",\n            \"NA\"\n        ],\n        \"Age Range\": [\n            \"0-12\",\n            \"3-11\",\n            \"0-3\",\n            \"4-11\"\n        ],\n        \"Cost\": \"Free\",\n        \"Neighborhood/Area\": \"South Boulder\",\n        \"Seasonality\": [\n            \"Summer\",\n            \"Fall\",\n            \"Winter\",\n            \"Spring\"\n        ],\n        \"Advance Booking Required\": \"No\",\n        \"Typical Duration \": \"0-3 hours\",\n        \"Energy Level\": \"High\",\n        \"Activity Type\": [\n            \"Playground\",\n            \"Water Play\",\n            \"Creative\",\n            \"Social\",\n            \"Physical\",\n            \"Educational\",\n            \"Nature\",\n            \"Storytime\",\n            \"Music\",\n            \"Museum\",\n            \"Hike/Trail\",\n            \"Indoor Play\"\n        ],\n        \"Changing Table\": \"Yes\",\n        \"Nursing-Friendly Area\": \"Yes\",\n        \"Shade Coverage\": \"Yes\",\n        \"Last Verified Date\": \"2025-08-12\",\n        \"Birthday Parties\": \"Yes\",\n        \"Town\": \"Boulder\",\n        \"Record ID\": \"recOZQEKC9Xl24s85\"\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "LLM",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "TOKEN"
+					}
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"model\": \"gpt-4\",\n    \"messages\": [\n      {\"role\": \"system\", \"content\": \"You are compiling information about toddler destinations in Boulder, CO. Fill in empty fields for each new record based on the same format as the list of properties. If information is not available leave those properties blank. THese are all of the fields: Name, Hours, Address, Website, Google Maps Link, Description, Food Options, Age Range, Cost, Neighborhood/Area, Seasonality, Advance Booking Required, Typical Duration , Energy Level, Activity Type, Changing Table, Nursing-Friendly Area, Shade Coverage, Last Verified Date, Birthday Parties, Town\"},\n      {\"role\": \"user\", \"content\": \"{{model}}\"}\n    ]\n  }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "https://api.openai.com/v1/chat/completions"
+			},
+			"response": []
+		},
+		{
+			"name": "Get All Records",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "YOUR_PERSONAL_ACCESS_TOKEN"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://api.airtable.com/v0/appaEpNPIcJAPEdnz/Anytime?maxRecords=3&view=Grid%20view",
+					"protocol": "https",
+					"host": [
+						"api",
+						"airtable",
+						"com"
+					],
+					"path": [
+						"v0",
+						"appaEpNPIcJAPEdnz",
+						"Anytime"
+					],
+					"query": [
+						{
+							"key": "maxRecords",
+							"value": "3"
+						},
+						{
+							"key": "view",
+							"value": "Grid%20view"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": {
+			"token": "{{vault:airtablePAT}}"
+		}
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_id",
+			"value": "appaEpNPIcJAPEdnz",
+			"type": "default"
+		},
+		{
+			"key": "table_id",
+			"value": "Anytime",
+			"type": "default"
+		},
+		{
+			"key": "record_id",
+			"value": "recrBAy6TyrAbqROZ",
+			"type": "default"
+		},
+		{
+			"key": "model",
+			"value": ""
+		}
+	]
+}
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<PostmanCollectionDocs collection={myCollectionJson} />
+			
+		</main>
+		<Footer />
+	</body>
+</html>
