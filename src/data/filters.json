@@ -3,7 +3,7 @@
       "variant": "image",
       "label": "type",
       "options": [
-        { "value": "STEM", "imageUrl": "../src/assets/stem.png" },
+        { "value": "STEM", "imageUrl": "/src/assets/stem.png" },
         { "value": "Art", "imageUrl": "../src/assets/art.png" },
         { "value": "Storytime", "imageUrl": "../src/assets/storytime.png" },
         { "value": "Sports", "imageUrl": "../src/assets/sports.png" },
