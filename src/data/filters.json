@@ -3,19 +3,19 @@
       "variant": "image",
       "label": "type",
       "options": [
-        { "value": "Music", "imageUrl": "https://picsum.photos/id/237/200/300" },
-        { "value": "STEM", "imageUrl": "https://picsum.photos/id/1003/200/300" },
-        { "value": "Art", "imageUrl": "https://picsum.photos/id/102/200/300" },
-        { "value": "Storytime", "imageUrl": "https://picsum.photos/id/1062/200/300" },
-        { "value": "Sports", "imageUrl": "https://picsum.photos/id/1084/200/300" },
-        { "value": "Creative", "imageUrl": "https://picsum.photos/id/1084/200/300" },
-        { "value": "Nature", "imageUrl": "https://picsum.photos/id/1084/200/300" },
-        { "value": "Water Play", "imageUrl": "https://picsum.photos/id/1084/200/300" },
-        { "value": "Music", "imageUrl": "https://picsum.photos/id/1084/200/300" },
-        { "value": "Museum", "imageUrl": "https://picsum.photos/id/1084/200/300" },
-        { "value": "Playground", "imageUrl": "https://picsum.photos/id/1084/200/300" },
-        { "value": "Trail", "imageUrl": "https://picsum.photos/id/1084/200/300" },
-        { "value": "Indoor Play", "imageUrl": "https://picsum.photos/id/1084/200/300" }
+        { "value": "STEM", "imageUrl": "../src/assets/stem.png" },
+        { "value": "Art", "imageUrl": "../src/assets/art.png" },
+        { "value": "Storytime", "imageUrl": "../src/assets/storytime.png" },
+        { "value": "Sports", "imageUrl": "../src/assets/sports.png" },
+        { "value": "Nature", "imageUrl": "../src/assets/nature.png" },
+        { "value": "Water Play", "imageUrl": "../src/assets/water.png" },
+        { "value": "Music & Dance", "imageUrl": "../src/assets/musicDance.png" },
+        { "value": "Museum", "imageUrl": "../src/assets/museum.png" },
+        { "value": "Playground", "imageUrl": "../src/assets/playground.png" },
+        { "value": "Trail", "imageUrl": "../src/assets/trail.png" },
+        { "value": "Animals", "imageUrl": "../src/assets/animals.png" },
+        { "value": "Performance", "imageUrl": "../src/assets/performance.png" },
+        { "value": "Community", "imageUrl": "../src/assets/community.png" }
       ]
     },
     {

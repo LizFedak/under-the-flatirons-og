@@ -22,17 +22,41 @@ const selected = new Set<string>(selectedValues);
 
   .imgList { 
     display: flex; flex-wrap: wrap; gap: 10px; width: 100%; justify-content: center;box-sizing: border-box;}
-  .image-option { display:flex; flex-direction:column; align-items:center; gap:.35rem; cursor:pointer; padding:.5rem; border-radius: .75rem; user-select:none; }
+  .image-option { display:flex; flex-direction:column; align-items:center; gap:.35rem; cursor:pointer; padding:.5rem; border-radius: .15rem; user-select:none; }
   .image-option input[type="checkbox"] { position:absolute; opacity:0; pointer-events:none; }
-  .image-option img { border:3px solid transparent; border-radius:50%; transition:border-color .2s ease; width:60px; height:60px; object-fit:cover; background:#f3f4f6; }
+  .image-option img { border:3px solid transparent; border-radius:25%; transition:border-color .2s ease; width:150px; height:150px; object-fit:cover; background:#f3f4f6; }
 
 
 
 
 /* Base: when not checked */
 .image-option img {
-  border: 3px solid transparent;
+  border: 5px solid transparent;
 }
+
+.imgList .image-option:nth-of-type(5n + 1) input:checked + img {
+  border-color: #04e762;
+}
+.imgList .image-option:nth-of-type(5n + 2) input:checked + img {
+  border-color: #ffbe0b;
+}
+
+.imgList .image-option:nth-of-type(5n + 3) input:checked + img {
+  border-color: #2609d6;
+}
+
+.imgList .image-option:nth-of-type(5n + 4) input:checked + img {
+  border-color: #ff006e;
+}
+
+.imgList .image-option:nth-of-type(5n + 5) input:checked + img {
+  border-color: #8338ec;
+}
+
+
+
+
+
 
 </style>
 
@@ -46,7 +70,7 @@ const selected = new Set<string>(selectedValues);
         <label class="image-option">
           <input type="checkbox" value={opt.value} checked={isChecked} disabled={opt.disabled} />
           <img src={src} alt={opt.label ?? opt.value} loading="lazy" />
-          <span>{opt.label ?? opt.value}</span>
+          {/* <span>{opt.label ?? opt.value}</span> */}
         </label>
       );
     })}

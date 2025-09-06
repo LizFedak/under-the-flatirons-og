@@ -41,14 +41,16 @@ const selected = new Set<string>(selectedValues);
   .tagrow { display:flex; flex-wrap:wrap; gap:.35rem; }
   .tag { background:#eef2ff; color:#3730a3; padding:.1rem .4rem; border-radius:.5rem; font-size:.75rem; }
 
-  /* .image-option input[type="checkbox"]:nth-child(5n+1):checked + img { border-color:red; } */
+  @media (max-width: 768px) {
+    .msf {
+      width: 100%;
+    }
+  .btn {
+    /* min-width: 100%; */
+    width: 100%;
+  }
+}
 
-/* cycle 5 colors by position: 1–5, then repeat */
-
-/* apply the per-item color only when that item's checkbox is checked */
-/* .image-option input[type="checkbox"]:checked + img {
-  border-color: var(--sel);
-} */
 
 </style>
 

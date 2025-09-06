@@ -50,7 +50,20 @@ import Header from "../../components/Header.astro";
 	  grid-template-columns: repeat(4, 1fr);
 	  margin: 50px 0;
 	}
-	@media (max-width: 640px) {
+
+	@media (max-width: 1000px) {
+		.cards {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+
+	@media (max-width: 780px) {
+		.cards {
+			grid-template-columns: repeat(2, 1fr);
+		}
+  	}
+
+	  @media (max-width: 540px) {
 	  .cards { grid-template-columns: 1fr; } /* 1 per row mobile */
 	}
 	
