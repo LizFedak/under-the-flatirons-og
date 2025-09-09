@@ -3,19 +3,19 @@
       "variant": "image",
       "label": "type",
       "options": [
-        { "value": "STEM", "imageUrl": "/src/assets/stem.png" },
-        { "value": "Art", "imageUrl": "../src/assets/art.png" },
-        { "value": "Storytime", "imageUrl": "../src/assets/storytime.png" },
-        { "value": "Sports", "imageUrl": "../src/assets/sports.png" },
-        { "value": "Nature", "imageUrl": "../src/assets/nature.png" },
-        { "value": "Water Play", "imageUrl": "../src/assets/water.png" },
-        { "value": "Music & Dance", "imageUrl": "../src/assets/musicDance.png" },
-        { "value": "Museum", "imageUrl": "../src/assets/museum.png" },
-        { "value": "Playground", "imageUrl": "../src/assets/playground.png" },
-        { "value": "Trail", "imageUrl": "../src/assets/trail.png" },
-        { "value": "Animals", "imageUrl": "../src/assets/animals.png" },
-        { "value": "Performance", "imageUrl": "../src/assets/performance.png" },
-        { "value": "Community", "imageUrl": "../src/assets/community.png" }
+        { "value": "STEM", "imageUrl": "/assets/stem.png" },
+        { "value": "Art", "imageUrl": "/assets/art.png" },
+        { "value": "Storytime", "imageUrl": "/assets/storytime.png" },
+        { "value": "Sports", "imageUrl": "/assets/sports.png" },
+        { "value": "Nature", "imageUrl": "/assets/nature.png" },
+        { "value": "Water Play", "imageUrl": "/assets/water.png" },
+        { "value": "Music & Dance", "imageUrl": "/assets/musicDance.png" },
+        { "value": "Museum", "imageUrl": "/assets/museum.png" },
+        { "value": "Playground", "imageUrl": "/assets/playground.png" },
+        { "value": "Trail", "imageUrl": "/assets/trail.png" },
+        { "value": "Animals", "imageUrl": "/assets/animals.png" },
+        { "value": "Performance", "imageUrl": "/assets/performance.png" },
+        { "value": "Community", "imageUrl": "/assets/community.png" }
       ]
     },
     {
