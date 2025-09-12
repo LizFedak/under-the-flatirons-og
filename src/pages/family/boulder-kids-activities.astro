@@ -5,10 +5,13 @@ import ActivityCard from '../../components/filter/ActivityCard.astro';
 import activities from '../../../src/data/data.json';
 import filters from '../../../src/data/filters.json';
 import Header from "../../components/Header.astro";
+import BaseHead from '../../components/BaseHead.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
 ---
 
 <head>
+	<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 	<script>
 	// Google callback: wire Places Autocomplete + Enter-to-geocode
 	window.initMaps = function(){
@@ -66,7 +69,7 @@ import Header from "../../components/Header.astro";
 	  @media (max-width: 540px) {
 	  .cards { grid-template-columns: 1fr; } /* 1 per row mobile */
 	}
-	
+
   </style>
   </header>
 
@@ -78,6 +81,8 @@ import Header from "../../components/Header.astro";
 	  <ActivityCard item={item} />
 	))}
   	</section>
+
+	<ul class="paginationBottom"></ul>
 </div>
 
 
@@ -91,7 +96,12 @@ import Header from "../../components/Header.astro";
 	{ data: ['type', 'age', 'town', 'duration', 'seasonality', 'setting'] }
     ],
     listClass: 'cards',
-    page: 20
+    page: 10,
+	pagination: [{
+      name: "paginationBottom",
+      paginationClass: "paginationBottom",
+      outerWindow: 2
+    }]
   };
   const list = new List('filterContext', options);
 //   window._list = list; 
