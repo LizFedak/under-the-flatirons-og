@@ -1,6 +1,7 @@
 ---
 import { SITE_TITLE } from '../consts';
 import HeaderLink from './HeaderLink.astro';
+import UserBadge from '../components/auth/UserBadge.astro';
 ---
 
 <header class="site-header">
@@ -12,15 +13,17 @@ import HeaderLink from './HeaderLink.astro';
     <li><HeaderLink href="/dining">Dining</HeaderLink></li>
     <li><HeaderLink href="/business">Business</HeaderLink></li>
     <li><HeaderLink href="/real-estate">Real Estate</HeaderLink></li>
-
     <li>
-      <HeaderLink href="/family">Family</HeaderLink>
-      <ul>
-        <li><a href="/family/boulder-kids-activities">Kids Activities Finder</a></li>
-      </ul>
+		<HeaderLink href="/family">Family</HeaderLink>
+      	<ul>
+        	<li><a href="/family/boulder-kids-activities">Kids Activities Finder</a></li>
+      	</ul>
     </li>
   </ul>
 </header>
+
+
+<UserBadge />
 
 <style>
 /* Header title uses your old look */

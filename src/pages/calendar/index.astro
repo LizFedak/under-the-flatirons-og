@@ -32,6 +32,11 @@ const posts = (await getCollection('events'))
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js" defer></script> <!-- `defer` ensures the script is loaded after the page -->
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
 
 		<style>
 			/* #calendar-list ul li {
@@ -43,6 +48,7 @@ const posts = (await getCollection('events'))
 		<Header />
 		<main>
 			<section>
+				<input type="text" id="rangeDate" class="inputtextstyle" placeholder="Pick a date" data-input>
 				<div id="calendar-list">
 					<input class="search" placeholder="Search for events" />
 					<ul class="list grid gap-[20px]">
@@ -73,6 +79,24 @@ const posts = (await getCollection('events'))
 		valueNames: ['event-title'],
 		}
 		new List("calendar-list", options)
+
+
+		let cal = document.querySelector("#rangeDate")
+		console.log(cal)
+		// cal.flatpickr({
+        //     mode: 'range',
+        //     dateFormat: "Y-m-d",
+        //     open: true,
+        //     inline: true
+        // }); 
+
+		flatpickr("#rangeDate", {
+			mode: 'range',
+            dateFormat: "Y-m-d",
+            open: true,
+            inline: true})
+
+
 	</script>
 </html>
 

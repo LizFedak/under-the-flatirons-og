@@ -11,6 +11,80 @@ import SmallCardList from '../components/posts/SmallCardList.astro';
 
 const all = await getCollection('blog');
 
+const featured = all.find(p => p.data?.featured === true)
+  ?? all.toSorted((a, b) => (b.data.pubDate as Date).getTime() - (a.data.pubDate as Date).getTime())[0];
+
+const rest = all.filter(p => p !== featured)
+  .toSorted((a, b) => (b.data.pubDate as Date).getTime() - (a.data.pubDate as Date).getTime());
+
+const leftPosts  = rest.filter((_, i) => i % 2 === 0).slice(0, 8);
+const rightPosts = rest.filter((_, i) => i % 2 === 1).slice(0, 8);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <style>
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr 2fr 1fr;
+        grid-template-areas: "left headline right";
+        gap: 1rem;
+        align-items: start;
+      }
+      .headline { grid-area: headline; }
+      .left { grid-area: left; }
+      .right { grid-area: right; }
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+          grid-template-areas:
+            "headline"
+            "left"
+            "right";
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
+    
+
+    <main class="container">
+      <section class="layout">
+        <aside class="left">
+          <PostList posts={leftPosts} />
+        </aside>
+        <section class="headline">
+          {featured && <HeadlineCard post={featured} />}
+        </section>
+        <aside class="right">
+          <SmallCardList posts={rightPosts} />
+        </aside>
+      </section>
+    </main>
+    <Footer />
+
+    <!-- handles only when hash tokens are present -->
+    <script type="module" src="/src/scripts/handle-magic-link.js"></script>
+  </body>
+</html>
+
+
+<!-- ---
+export const prerender = true;
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { getCollection } from 'astro:content';
+import HeadlineCard from '../components/posts/HeadlineCard.astro';
+import PostList from '../components/posts/PostList.astro';
+import SmallCardList from '../components/posts/SmallCardList.astro';
+
+const all = await getCollection('blog');
+
 // pick featured if present; else latest by pubDate
 const featured = all.find(p => p.data?.featured === true)
   ?? all.toSorted((a, b) => (b.data.pubDate as Date).getTime() - (a.data.pubDate as Date).getTime())[0];
@@ -69,4 +143,4 @@ const rightPosts = rest.filter((_, i) => i % 2 === 1).slice(0, 8);
     </main>
     <Footer />
   </body>
-</html>
+</html> -->

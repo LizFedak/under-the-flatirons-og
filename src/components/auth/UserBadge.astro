@@ -1,0 +1,38 @@
+---
+/* purely presentational; behavior comes from /src/scripts/user-badge.js */
+const { signinHref = "/signin" } = Astro.props;
+---
+<style>
+  .auth-badge {
+    position: fixed; top: .75rem; right: .75rem; display: none; gap: .5rem;
+    align-items: center; z-index: 50; background: white; border: 1px solid #e5e7eb;
+    border-radius: 9999px; padding: .25rem .5rem; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    font: 14px/1.2 system-ui, sans-serif;
+  }
+  .auth-badge.show { display: inline-flex; }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 9999px; display:grid; place-items:center;
+    font-weight: 700; border: 1px solid #e5e7eb; background:#f3f4f6;
+  }
+  .auth-link { text-decoration: underline; cursor: pointer; background:none; border:0; padding:0; }
+</style>
+
+<!-- data-signin-href lets you override per page if needed -->
+<div id="user-badge" class="auth-badge" data-signin-href={signinHref} aria-live="polite" aria-atomic="true">
+  <!-- Signed OUT state -->
+  <div id="signin-row" style="display:none; gap:.5rem; align-items:center;">
+    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.33 0-8 2.17-8 4.5V21h16v-2.5C20 16.17 16.33 14 12 14Z"/></svg>
+    <a id="signin-link" class="auth-link" href={signinHref}>Sign in</a>
+  </div>
+
+  <!-- Signed IN state -->
+  <div id="user-row" style="display:none; gap:.5rem; align-items:center;">
+    <div id="avatar" class="avatar">?</div>
+    <span id="auth-email"></span>
+    <form action="/api/auth/signout" method="get">
+      <button class="auth-link" type="submit" title="Sign out">Sign out</button>
+    </form>
+  </div>
+</div>
+
+<script type="module" src="/src/scripts/user-badge.js"></script>

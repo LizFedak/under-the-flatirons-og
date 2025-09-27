@@ -1,5 +1,119 @@
 ---
 export const prerender = true;
+
+import BlogPost from '../../layouts/BlogPost.astro';
+import { supabaseServer } from '../../lib/supabase';
+import { marked } from 'marked';
+
+type PostRow = {
+  slug: string;
+  title: string;
+  description?: string;
+  content_md: string;
+  pub_date?: string;        // your DB field names
+  updated_date?: string;
+  hero_image_url?: string;  // store URL in DB
+  tag?: string;
+  author_name?: string;     // denormalized for simplicity
+  image_alt?: string;
+  featured?: boolean;
+  published: boolean;
+};
+
+export async function getStaticPaths() {
+  const { data, error } = await supabaseServer
+    .from('posts')
+    .select('slug')
+    .eq('published', true);
+
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    params: { slug: row.slug },
+    props: { slug: row.slug },
+  }));
+}
+
+const { slug } = Astro.props;
+
+const { data: post, error } = await supabaseServer
+  .from('posts')
+  .select('*')
+  .eq('slug', slug)
+  .single<PostRow>();
+
+if (error || !post?.published) throw Astro.redirect('/404');
+
+const html = marked.parse(post.content_md ?? '');
+---
+
+<BlogPost
+  title={post.title}
+  description={post.description}
+  pubDate={post.pub_date}
+  updatedDate={post.updated_date}
+  tag={post.tag}
+  author={post.author_name}
+  imageAlt={post.image_alt}
+  featured={post.featured}
+  heroImageUrl={post.hero_image_url}   {/* Use a URL prop in your layout */}
+>
+  <Fragment set:html={html} />
+</BlogPost>
+
+
+<!-- ---
+export const prerender = true;
+
+import BlogPost from '../../layouts/BlogPost.astro';
+import { supabaseServer } from '../../lib/supabase';
+import { marked } from 'marked';
+
+type PostRow = {
+  slug: string;
+  title: string;
+  content_md: string;        // store markdown in Supabase
+  author?: string;
+  published_at?: string;
+  published: boolean;
+};
+
+// Build all routes from Supabase
+export async function getStaticPaths() {
+  const { data, error } = await supabaseServer
+    .from('posts')
+    .select('slug')
+    .eq('published', true);
+
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    params: { slug: row.slug },
+    props: { slug: row.slug },
+  }));
+}
+
+const { slug } = Astro.props;
+
+// Fetch post data for this slug
+const { data: post, error } = await supabaseServer
+  .from('posts')
+  .select('title, content, author')
+  .eq('slug', slug)
+  .single<PostRow>();
+
+if (error || !post || !post.published) {
+  throw Astro.redirect('/404');
+}
+
+const html = marked.parse(post.content_md ?? '');
+---
+
+<BlogPost title={post.title} author={post.author} pubDate={post.published_at}>
+  <Fragment set:html={html} />
+</BlogPost>
+
+
+<!-- ---
+export const prerender = true;
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
 
@@ -18,4 +132,5 @@ const { Content } = await render(post);
 
 <BlogPost {...post.data}>
 	<Content />
-</BlogPost>
+</BlogPost> -->
+ -->

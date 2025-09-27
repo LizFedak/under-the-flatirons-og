@@ -1,124 +1,98 @@
 ---
 export const prerender = true;
-import { Image } from 'astro:assets';
-import { getCollection } from 'astro:content';
+
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
-
-import MedColPosts from '../../components/posts/MedColPosts.astro';
 import PostCard from '../../components/posts/PostCard.astro';
+import { supabaseServer } from '../../lib/supabase';
 
-// const allPosts = await getCollection('blog');
+// 1) Fetch from Supabase instead of astro:content
+type PostRow = {
+  slug: string;
+  title: string;
+  content?: string;
+//   published_at?: string;
+//   updated_at?: string;
+//   hero_image_url?: string;
+//   image_alt?: string;
+//   tag?: string;
+//   author_name?: string;
+//   featured?: boolean;
+//   published: boolean;
+};
 
+const { data: rows, error } = await supabaseServer
+  .from('articles')
+  .select('slug,title,hero_image,tags,author')
+//   .eq('published', true);
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+if (error) {
+  console.error('Supabase error on blog index:', error);
+  throw error;
+}
+
+// 2) Sort newest first
+(rows ?? []).sort((a, b) =>
+  new Date(b.published_at ?? 0).valueOf() - new Date(a.published_at ?? 0).valueOf()
 );
 
-
-
-const allPosts = posts;
-const featured = allPosts.slice(0, 4);
+// 3) Adapt to the shape PostCard expects (mimic content collection)
+const posts = (rows ?? []).map((r) => ({
+  slug: r.slug,                       // for links to /blog/[slug]
+  id: r.slug,                         // some components use `id`
+  data: {
+    title: r.title,
+    // description: r.description,
+    // pubDate: r.published_at ? new Date(r.published_at) : undefined,
+    // updatedDate: r.updated_at ? new Date(r.updated_at) : undefined,
+    tag: r.tags,
+    author: r.author,
+    // imageAlt: r.image_alt,
+    // featured: !!r.featured,
+    heroImageUrl: r.hero_image,   // use URL instead of astro `image()`
+  },
+}));
 ---
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			/* ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			} */
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			<section>
-				<ul>
-					{
-						posts.map((post) => (
-							<li>
-								<PostCard post={post} />
-							
-							</li>
-						))
-					}
-				</ul>
-			</section>
-
-			<!-- <MedColPosts posts={featured} /> -->
-
-		
-		</main>
-		<Footer />
-	</body>
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <style>
+      main { width: 960px; }
+      ul { display: flex; flex-wrap: wrap; gap: 2rem; list-style: none; margin: 0; padding: 0; }
+      ul li { width: calc(50% - 1rem); }
+      ul li * { text-decoration: none; transition: 0.2s ease; }
+      ul li img { margin-bottom: 0.5rem; border-radius: 12px; }
+      ul li a { display: block; }
+      .title { margin: 0; color: rgb(var(--black)); line-height: 1; }
+      .date { margin: 0; color: rgb(var(--gray)); }
+      ul li a:hover h4,
+      ul li a:hover .date { color: rgb(var(--accent)); }
+      ul a:hover img { box-shadow: var(--box-shadow); }
+      @media (max-width: 720px) {
+        ul { gap: 0.5em; }
+        ul li { width: 100%; text-align: center; }
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
+    <main>
+      <section>
+        <ul>
+          {posts.map((post) => (
+            <li>
+              <PostCard post={post} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    </main>
+    <Footer />
+  </body>
 </html>
