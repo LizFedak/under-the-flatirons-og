@@ -1,17 +1,54 @@
 ---
-interface Props {
-	date: Date;
+export interface Props {
+  // Accept flexible inputs
+  date?: Date | string | number | null;
+  // Optional text before the date
+  prefix?: string;
+  // What to render if date is invalid/missing (or leave blank to render nothing)
+  fallback?: string;
+  // Turn on extra logging & an inline debug block in dev
+  debug?: boolean;
 }
 
-const { date } = Astro.props;
+const {
+  date,
+  prefix = '',
+  fallback = '',
+  debug = false,
+} = Astro.props as Props;
+
+function toDate(v: unknown): Date | null {
+  if (v == null) return null;
+  const d = v instanceof Date ? v : new Date(v as any);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+const d = toDate(date);
+const iso = d ? d.toISOString() : null;
+const formatted = d
+  ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  : null;
+
+// Server-side console log in dev
+if (import.meta.env.DEV && debug) {
+  console.log('[FormattedDate]', { input: date, parsed: d, iso, formatted });
+}
 ---
 
-<time datetime={date.toISOString()}>
-	{
-		date.toLocaleDateString('en-us', {
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-		})
-	}
-</time>
+{d ? (
+  <time datetime={iso!}>
+    {prefix}{formatted}
+  </time>
+) : (
+  fallback ? <span>{fallback}</span> : null
+)}
+
+{import.meta.env.DEV && debug && (
+  <details style="font-size:.8rem;color:#555;margin-top:.25rem">
+    <summary>Date debug</summary>
+    <pre>{JSON.stringify(
+      { input: date, parsed: d ? d.toString() : null, iso, formatted },
+      null, 2
+    )}</pre>
+  </details>
+)}

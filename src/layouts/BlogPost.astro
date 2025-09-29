@@ -1,19 +1,52 @@
 ---
-import { Image } from 'astro:assets';
-import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
+import { Image } from 'astro:assets';
 
-type Props = CollectionEntry<'blog'>['data'];
+export interface Props {
+  title: string;
+  description?: string | null;
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+  // hero image can be a URL string (from Supabase) or an Astro ImageMetadata
+  heroImageUrl?: string | null;
+  heroImage?: any; // ImageMetadata if you still pass imported images sometimes
+  imageAlt?: string | null;
+
+  // dates from DB (ISO strings) or JS Date
+  pubDate?: string | Date | null;
+  updatedAt?: string | Date | null;
+
+  // optional extras you’re already passing
+  tag?: string | string[] | null;
+  author?: string | { name?: string | null } | null;
+  featured?: boolean | null;
+}
+
+const {
+  title,
+  description,
+  heroImageUrl,
+  heroImage,
+  imageAlt,
+  pubDate,
+  updatedAt,
+  tag,
+  author,
+} = Astro.props as Props;
+
+const authorName =
+  typeof author === 'string' ? author : author?.name ?? null;
+
+const tagList = Array.isArray(tag) ? tag : (tag ? [tag] : []);
+
+const hasMetaImage = heroImage && typeof heroImage === 'object' && 'src' in heroImage;
+const altText = imageAlt ?? title;
 ---
-
 <html lang="en">
 	<head>
-		<BaseHead title={title} description={description} />
+		<BaseHead title={title} description={description ?? undefined} />
 		<style>
 			main {
 				width: calc(100% - 2em);
@@ -27,6 +60,9 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 				display: block;
 				margin: 0 auto;
 				box-shadow: var(--box-shadow);
+				max-width: 1020px;
+				width: 100%;
+				border-radius: 12px;
 			}
 			.prose {
 				width: 720px;
@@ -47,9 +83,31 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 			.date {
 				margin-bottom: 0.5em;
 				color: rgb(var(--gray));
+				display: grid;
+				gap: .25rem;
+				justify-content: center;
 			}
 			.last-updated-on {
 				font-style: italic;
+			}
+			.pills {
+				display: flex;
+				gap: .5rem;
+				justify-content: center;
+				flex-wrap: wrap;
+				margin-top: .25rem;
+			}
+			.pill {
+				font-size: .75rem;
+				background: #eef2ff;
+				color: #111827;
+				padding: .15rem .5rem;
+				border-radius: 999px;
+			}
+			.byline {
+				color: #6b7280;
+				margin: .25rem 0 0;
+				text-align: center;
 			}
 		</style>
 	</head>
@@ -58,22 +116,33 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 		<Header />
 		<main>
 			<article>
-				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
-				</div>
+				{(hasMetaImage || heroImageUrl) && (
+					<div class="hero-image">
+						{hasMetaImage ? (
+							<Image width={1020} height={510} src={heroImage} alt={altText} />
+						) : (
+							<img src={heroImageUrl!} alt={altText} loading="eager" />
+						)}
+					</div>
+				)}
 				<div class="prose">
 					<div class="title">
 						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
+							{pubDate && <FormattedDate date={pubDate} />}
+							{updatedAt && (
+								<div class="last-updated-on">
+									Last updated <FormattedDate date={updatedAt} />
+								</div>
+							)}
+							{authorName && <div class="byline">By <strong>{authorName}</strong></div>}
+							{tagList.length > 0 && (
+								<div class="pills">
+									{tagList.map((t) => <span class="pill">{t}</span>)}
+								</div>
+							)}
 						</div>
 						<h1>{title}</h1>
+						{description && <p style="color:rgb(var(--gray)); margin:.25rem 0 0;">{description}</p>}
 						<hr />
 					</div>
 					<slot />

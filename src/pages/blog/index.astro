@@ -3,12 +3,135 @@ export const prerender = true;
 
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+
+import PostCard from '../../components/posts/PostCard.astro';
+import { supabase } from '../../lib/supabase';
+
+// Rows as they exist in Supabase
+type PostRow = {
+  record_id: string;
+  slug?: string | null;
+  title: string;
+  description?: string | null;
+  published_at?: string | null;
+  updated_at?: string | null;
+  hero_image?: string | null;
+  image_alt?: string | null;
+  tags?: string[] | string | null;
+  author?: string | { name: string } | null;
+  published?: boolean | null;
+};
+
+// 1) Fetch from Supabase
+const { data: rows, error } = await supabase
+  .from('articles')
+  .select('record_id,slug,title,description,published_at,updated_at,hero_image,image_alt,tags,author,published');
+// .eq('published', true);
+
+if (error) {
+  console.error('Supabase error on blog index:', error);
+  throw error;
+}
+
+// 2) Sort newest first (by published_at if present)
+(rows ?? []).sort((a, b) =>
+  new Date(b?.published_at ?? 0).valueOf() - new Date(a?.published_at ?? 0).valueOf()
+);
+
+// 3) Adapt to the shape PostCard expects
+const posts = (rows ?? [])
+  .filter((r) => r?.record_id) // ensure we have a key
+  .map((r) => {
+    const safeSlug = (r.slug && r.slug.trim()) || r.record_id; // fallback to record_id
+    const authorName =
+      typeof r.author === 'string' ? r.author : (r.author as any)?.name;
+
+    return {
+      slug: safeSlug,            // for links to /blog/[slug]
+      id: r.record_id,           // some components use `id`
+      data: {
+        title: r.title,
+        description: r.description ?? '',
+        published: r.published ?? '',
+        updated_at: r.updated_at ?? '',
+        tag: r.tags ?? [],
+        author: authorName ? { name: authorName } : undefined,
+        imageAlt: r.image_alt ?? undefined,
+        // PostCard looks for `heroImage` (not heroImageUrl)
+        heroImage: r.hero_image || null,
+        // If you later want dates in cards, you can add:
+        // pubDate: r.published_at ? new Date(r.published_at) : undefined,
+        // updatedDate: r.updated_at ? new Date(r.updated_at) : undefined,
+      },
+    };
+  });
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+    <style>
+      main { width: 960px; }
+      ul { display: flex; flex-wrap: wrap; gap: 2rem; list-style: none; margin: 0; padding: 0; }
+      ul li { width: calc(50% - 1rem); }
+      ul li * { text-decoration: none; transition: 0.2s ease; }
+      ul li img { margin-bottom: 0.5rem; border-radius: 12px; }
+      ul li a { display: block; }
+      .title { margin: 0; color: rgb(var(--black)); line-height: 1; }
+      .date { margin: 0; color: rgb(var(--gray)); }
+      ul li a:hover h4,
+      ul li a:hover .date { color: rgb(var(--accent)); }
+      ul a:hover img { box-shadow: var(--box-shadow); }
+      @media (max-width: 720px) {
+        ul { gap: 0.5em; }
+        ul li { width: 100%; text-align: center; }
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
+    <main>
+      <section>
+        <ul>
+          {posts.map((post) => {
+            const href = `/blog/${String(post.slug || post.id).replace(/^\/+|\/+$/g, '')}`;
+            return (
+              <li>
+                <PostCard post={post} href={href} />
+              </li>
+            );
+          })}
+        </ul>
+
+        {import.meta.env.DEV && (
+          <details style="margin-top:1rem">
+            <summary>Debug: first post</summary>
+            <pre style="white-space:pre-wrap;font-size:.85rem">
+{JSON.stringify(posts?.[0], null, 2)}
+            </pre>
+          </details>
+        )}
+      </section>
+    </main>
+    <Footer />
+  </body>
+</html>
+
+
+<!-- ---
+export const prerender = true;
+
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
 import PostCard from '../../components/posts/PostCard.astro';
-import { supabaseServer } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 // 1) Fetch from Supabase instead of astro:content
 type PostRow = {
@@ -25,7 +148,7 @@ type PostRow = {
 //   published: boolean;
 };
 
-const { data: rows, error } = await supabaseServer
+const { data: rows, error } = await supabase
   .from('articles')
   .select('slug,title,hero_image,tags,author')
 //   .eq('published', true);
@@ -95,4 +218,4 @@ const posts = (rows ?? []).map((r) => ({
     </main>
     <Footer />
   </body>
-</html>
+</html> -->

@@ -14,6 +14,9 @@ const link = href ?? `/blog/${post.slug ?? post.id}/`;
 
 const hero = data.heroImage; // could be string or ImageMetadata
 const hasImageMetadata = typeof hero === 'object' && hero && 'src' in hero;
+
+console.log('[PostCard props]', { slug: post.slug, id: post.id, data, href, link });
+
 ---
 
 <article class="wrap">

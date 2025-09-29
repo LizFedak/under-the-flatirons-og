@@ -1,47 +1,67 @@
 ---
+// src/pages/blog/[slug].astro
 export const prerender = true;
 
 import BlogPost from '../../layouts/BlogPost.astro';
-import { supabaseServer } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { marked } from 'marked';
 
 type PostRow = {
-  slug: string;
+  record_id: string;
   title: string;
   description?: string;
-  content_md: string;
-  pub_date?: string;        // your DB field names
+  content_md?: string;
+  pub_date?: string;
   updated_date?: string;
-  hero_image_url?: string;  // store URL in DB
+  hero_image_url?: string;
   tag?: string;
-  author_name?: string;     // denormalized for simplicity
+  author_name?: string;
   image_alt?: string;
   featured?: boolean;
-  published: boolean;
+  published?: boolean | null;
 };
 
 export async function getStaticPaths() {
-  const { data, error } = await supabaseServer
+  const { data, error } = await supabase
     .from('articles')
-    .select('slug')
-    .eq('published', true);
+    .select('record_id,published');
 
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
-    params: { slug: row.slug },
-    props: { slug: row.slug },
+  if (error) throw new Error(error.message);
+
+  // if `published` can be null/undefined, relax the predicate as needed
+  const rows = (data ?? []).filter((r) => r.published === true);
+
+  if (import.meta.env.DEV) console.log('[getStaticPaths] paths:', rows.length);
+
+  return rows.map((row) => ({
+    params: { slug: row.record_id },   // URL = /blog/<record_id>
   }));
 }
 
-const { slug } = Astro.props;
+// ✅ read from Astro.params (not props)
+const raw = Astro.params.slug as string | string[] | undefined;
+const id  = Array.isArray(raw) ? raw.join('/') : (raw ?? '');
 
-const { data: post, error } = await supabaseServer
+if (!id) {
+  // return (don't throw) to avoid "Error: {}"
+  return Astro.redirect('/blog');
+}
+
+const { data: post, error } = await supabase
   .from('articles')
   .select('*')
-  .eq('slug', slug)
+  .eq('record_id', id)
   .single<PostRow>();
 
-if (error || !post?.published) throw Astro.redirect('/404');
+if (error) {
+  console.error('Supabase error (detail):', error);
+  // show a 404 rather than throwing a non-Error
+  return new Response('Not found', { status: 404 });
+}
+
+if (!post?.published) {
+  return new Response('Not found', { status: 404 });
+}
 
 const html = marked.parse(post.content_md ?? '');
 ---
@@ -50,87 +70,12 @@ const html = marked.parse(post.content_md ?? '');
   title={post.title}
   description={post.description}
   pubDate={post.pub_date}
-  updatedDate={post.updated_date}
+  updatedAt={post.updated_at}
   tag={post.tag}
   author={post.author_name}
   imageAlt={post.image_alt}
   featured={post.featured}
-  heroImageUrl={post.hero_image_url}   {/* Use a URL prop in your layout */}
+  heroImageUrl={post.hero_image_url}
 >
   <Fragment set:html={html} />
 </BlogPost>
-
-
-<!-- ---
-export const prerender = true;
-
-import BlogPost from '../../layouts/BlogPost.astro';
-import { supabaseServer } from '../../lib/supabase';
-import { marked } from 'marked';
-
-type PostRow = {
-  slug: string;
-  title: string;
-  content_md: string;        // store markdown in Supabase
-  author?: string;
-  published_at?: string;
-  published: boolean;
-};
-
-// Build all routes from Supabase
-export async function getStaticPaths() {
-  const { data, error } = await supabaseServer
-    .from('posts')
-    .select('slug')
-    .eq('published', true);
-
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
-    params: { slug: row.slug },
-    props: { slug: row.slug },
-  }));
-}
-
-const { slug } = Astro.props;
-
-// Fetch post data for this slug
-const { data: post, error } = await supabaseServer
-  .from('posts')
-  .select('title, content, author')
-  .eq('slug', slug)
-  .single<PostRow>();
-
-if (error || !post || !post.published) {
-  throw Astro.redirect('/404');
-}
-
-const html = marked.parse(post.content_md ?? '');
----
-
-<BlogPost title={post.title} author={post.author} pubDate={post.published_at}>
-  <Fragment set:html={html} />
-</BlogPost>
-
-
-<!-- ---
-export const prerender = true;
-import { type CollectionEntry, getCollection, render } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
-
-export async function getStaticPaths() {
-	const posts = await getCollection('blog');
-	return posts.map((post) => ({
-		params: { slug: post.id },
-		props: post,
-	}));
-}
-type Props = CollectionEntry<'blog'>;
-
-const post = Astro.props;
-const { Content } = await render(post);
----
-
-<BlogPost {...post.data}>
-	<Content />
-</BlogPost> -->
- -->
