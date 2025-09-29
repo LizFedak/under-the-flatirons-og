@@ -22,7 +22,7 @@ type PostRow = {
 
 export async function getStaticPaths() {
   const { data, error } = await supabaseServer
-    .from('posts')
+    .from('articles')
     .select('slug')
     .eq('published', true);
 
@@ -36,7 +36,7 @@ export async function getStaticPaths() {
 const { slug } = Astro.props;
 
 const { data: post, error } = await supabaseServer
-  .from('posts')
+  .from('articles')
   .select('*')
   .eq('slug', slug)
   .single<PostRow>();
