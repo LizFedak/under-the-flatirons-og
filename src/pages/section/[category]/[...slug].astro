@@ -2,29 +2,33 @@
 // src/pages/blog/[slug].astro
 export const prerender = true;
 
-import BlogPost from '../../layouts/BlogPost.astro';
-import { supabase } from '../../lib/supabase';
+import BlogPost from '../../../layouts/BlogPost.astro';
+import { supabase } from '../../../lib/supabase';
 import { marked } from 'marked';
 
 type PostRow = {
   record_id: string;
   title: string;
   description?: string;
-  content_md?: string;
-  pub_date?: string;
+  content?: string;
+  published_at?: string;
   updated_date?: string;
   hero_image_url?: string;
-  tag?: string;
-  author_name?: string;
+  tag?: string | string[] | null;
+  author?: string;
   image_alt?: string;
   featured?: boolean;
   published?: boolean | null;
+  category?: string | null;
 };
+
+
+
 
 export async function getStaticPaths() {
   const { data, error } = await supabase
     .from('articles')
-    .select('record_id,published');
+    .select('record_id,published,category');
 
   if (error) throw new Error(error.message);
 
@@ -34,7 +38,7 @@ export async function getStaticPaths() {
   if (import.meta.env.DEV) console.log('[getStaticPaths] paths:', rows.length);
 
   return rows.map((row) => ({
-    params: { slug: row.record_id },   // URL = /blog/<record_id>
+    params: { category: row.category.toLowerCase(), slug: row.record_id },
   }));
 }
 
@@ -63,19 +67,21 @@ if (!post?.published) {
   return new Response('Not found', { status: 404 });
 }
 
-const html = marked.parse(post.content_md ?? '');
+const html = marked.parse(post.content ?? '');
 ---
 
 <BlogPost
   title={post.title}
   description={post.description}
-  pubDate={post.pub_date}
+  published_at={post.published_at}
   updatedAt={post.updated_at}
   tag={post.tag}
-  author={post.author_name}
+  author={post.author}
   imageAlt={post.image_alt}
   featured={post.featured}
   heroImageUrl={post.hero_image_url}
+  category={post.category}
+  content={post.content}
 >
   <Fragment set:html={html} />
 </BlogPost>

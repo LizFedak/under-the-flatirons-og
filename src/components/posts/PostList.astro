@@ -1,6 +1,158 @@
 ---
 import HeroImage from '../media/HeroImage.astro';
 import AuthorBlock from './AuthorBlock.astro';
+
+export interface Props {
+  posts: any[];
+  showThumb?: boolean;
+}
+const { posts = [], showThumb = true } = Astro.props;
+
+// helpers
+function toArray(input: unknown): string[] {
+  if (Array.isArray(input)) return input.flatMap(v => String(v).split(',')).map(s => s.trim()).filter(Boolean);
+  if (typeof input === 'string') return input.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+}
+function slugifyName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+// pick the category for the URL: prefer data.category or data.section, else first tag; fallback to "uncategorized"
+function pickCategorySlug(d: any): string {
+  const category = d.category;
+  const candidate = d.category ?? 'blog';
+  return slugifyName(String(candidate));
+}
+---
+
+<ul class="postlist">
+  {posts.map((p) => {
+    const d = p?.data ?? {};
+
+    const postSlug = String(p?.slug ?? p?.id);
+    const categorySlug = pickCategorySlug(d);
+
+    // NEW: /section/{category}/{post}
+    const href = `/section/${categorySlug}/${postSlug}/`;
+
+    const tagList = toArray(d.tags ?? d.tag);
+
+    const authorName = typeof d.author === 'string' ? d.author : (d.author?.name ?? '');
+    const authorObj = authorName
+      ? {
+          name: authorName,
+          slug: (typeof d.author === 'object' && d.author?.slug) ? d.author.slug : slugifyName(authorName),
+          ...(typeof d.author === 'object' ? d.author : {})
+        }
+      : undefined;
+
+    const heroAlt = d.imageAlt ?? d.title ?? '';
+
+    return (
+      <li class="column">
+        {showThumb && d.heroImage && (
+          <a href={href} class="thumb">
+            <HeroImage src={d.heroImage} alt={heroAlt} class="img" />
+          </a>
+        )}
+
+        <div class="meta block align-middle gap-2 height-fit">
+          {tagList[0] && <span class="tag border-solid border-1 p-1 rounded-[5px]">{tagList[0]}</span>}
+          <a class="title align-middle" href={href}>{d.title}</a>
+        </div>
+
+        {d.description && <p>{d.description}</p>}
+
+        <AuthorBlock author={authorObj} />
+      </li>
+    );
+  })}
+</ul>
+
+<style>
+  .postlist { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.75rem; }
+  .row { display:flex; gap:.75rem; align-items:flex-start; }
+  .thumb .img { display:block; width: 100%; }
+  .meta .title { text-decoration:none; color:inherit; font-weight:600; }
+  .tag { font-size:.75rem; color:#6b7280; }
+</style>
+
+
+
+<!-- ---
+import HeroImage from '../media/HeroImage.astro';
+import AuthorBlock from './AuthorBlock.astro';
+
+export interface Props {
+  posts: any[];
+  showThumb?: boolean;
+}
+const { posts = [], showThumb = true } = Astro.props;
+
+// helpers
+function toArray(input: unknown): string[] {
+  if (Array.isArray(input)) return input.flatMap(v => String(v).split(',')).map(s => s.trim()).filter(Boolean);
+  if (typeof input === 'string') return input.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+}
+function slugifyName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+---
+
+<ul class="postlist">
+  {posts.map((p) => {
+    const d = p?.data ?? {};
+    const href = `/blog/${String(p?.slug ?? p?.id)}/`;
+
+    // tags: accept d.tags or d.tag; show first tag here
+    const tagList = toArray(d.tags ?? d.tag);
+
+    // author: accept string or object; provide slug for AuthorBlock
+    const authorName = typeof d.author === 'string' ? d.author : (d.author?.name ?? '');
+    const authorObj = authorName
+      ? {
+          name: authorName,
+          slug: (typeof d.author === 'object' && d.author?.slug) ? d.author.slug : slugifyName(authorName),
+          ...(typeof d.author === 'object' ? d.author : {})
+        }
+      : undefined;
+
+    const heroAlt = d.imageAlt ?? d.title ?? '';
+
+    return (
+      <li class="column">
+        {showThumb && d.heroImage && (
+          <a href={href} class="thumb">
+            <HeroImage src={d.heroImage} alt={heroAlt} class="img" />
+          </a>
+        )}
+
+        <div class="meta block align-middle gap-2 height-fit">
+          {tagList[0] && <span class="tag border-solid border-1 p-1 rounded-[5px]">{tagList[0]}</span>}
+          <a class="title align-middle" href={href}>{d.title}</a>
+        </div>
+
+        {d.description && <p>{d.description}</p>}
+
+        <AuthorBlock author={authorObj} />
+      </li>
+    );
+  })}
+</ul>
+
+<style>
+  .postlist { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.75rem; }
+  .row { display:flex; gap:.75rem; align-items:flex-start; }
+  .thumb .img { display:block; width: 100%; }
+  .meta .title { text-decoration:none; color:inherit; font-weight:600; }
+  .tag { font-size:.75rem; color:#6b7280; }
+</style>
+
+
+<!-- ---
+import HeroImage from '../media/HeroImage.astro';
+import AuthorBlock from './AuthorBlock.astro';
 export interface Props {
   posts: any[];
   showThumb?: boolean;
@@ -35,4 +187,4 @@ const { posts = [], showThumb = true } = Astro.props;
   .thumb .img { display:block; width: 100%;}
   .meta .title { text-decoration:none; color:inherit; font-weight:600; }
   .tag { font-size:.75rem; color:#6b7280; }
-</style>
+</style> --> -->

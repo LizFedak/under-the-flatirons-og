@@ -1,0 +1,102 @@
+---
+// src/pages/search.astro
+export const prerender = false;
+
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import PostList from '../components/posts/PostList.astro';
+import { supabase } from '../lib/supabase';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+function toTags(input: unknown): string[] {
+  if (Array.isArray(input)) return input.flatMap(v => String(v).split(',')).map(s => s.trim()).filter(Boolean);
+  if (typeof input === 'string') return input.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+}
+function slugifyName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+const q = (Astro.url.searchParams.get('q') ?? '').trim();
+
+let rows: any[] = [];
+if (q) {
+  try {
+    // Preferred: Full-Text Search
+    const { data, error } = await supabase
+      .from('articles')
+      .select('record_id,slug,title,description,published_at,updated_at,hero_image,image_alt,tags,author,published')
+      .eq('published', true)
+      .textSearch('fts', q, { type: 'websearch' })   // needs the FTS column/index
+      .limit(50);
+    if (error) throw error;
+    rows = data ?? [];
+  } catch {
+    // Fallback: ILIKE across key fields
+    const { data } = await supabase
+      .from('articles')
+      .select('record_id,slug,title,description,published_at,updated_at,hero_image,image_alt,tags,author,published')
+      .eq('published', true)
+      .or(`title.ilike.%${q}%,description.ilike.%${q}%,content_md.ilike.%${q}%`)
+      .limit(50);
+    rows = data ?? [];
+  }
+}
+
+// Adapt to your card/list shape
+const entries = (rows ?? []).map((r) => {
+  const safeSlug = (r.slug && r.slug.trim()) || r.record_id;
+  const authorName = typeof r.author === 'string' ? r.author : (r.author?.name ?? '');
+  const author = authorName ? { name: authorName, slug: slugifyName(authorName) } : undefined;
+  const tagList = toTags(r.tags);
+
+  return {
+    slug: safeSlug,
+    id: r.record_id,
+    data: {
+      title: r.title,
+      description: r.description ?? '',
+      pubDate: r.published_at ? new Date(r.published_at) : undefined,
+      updated_at: r.updated_at ?? '',
+      heroImage: r.hero_image || null,
+      imageAlt: r.image_alt ?? undefined,
+      author,
+      tag: tagList,
+      tags: tagList,
+    },
+  };
+});
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={`Search${q ? `: ${q}` : ''}`} description={SITE_DESCRIPTION} />
+    <style>
+      .wrap { max-width: 960px; margin: 1.5rem auto; padding: 0 1rem; }
+      .result-summary { color:#6b7280; margin-bottom:.75rem; }
+    </style>
+  </head>
+  <body>
+    <Header />
+
+    <main class="wrap">
+      <h1>Search</h1>
+
+      <form action="/search" method="get" role="search" style="margin:.75rem 0 1rem; display:flex; gap:.5rem;">
+        <input type="search" name="q" placeholder="Search articles…" value={q} style="flex:1; padding:.5rem .75rem; border:1px solid #e5e7eb; border-radius:8px;" />
+        <button type="submit" style="padding:.5rem .75rem; border:1px solid #e5e7eb; border-radius:8px; background:#f8fafc;">Search</button>
+      </form>
+
+      {q
+        ? <p class="result-summary">{entries.length} result{entries.length===1?'':'s'} for “{q}”</p>
+        : <p class="result-summary">Type a query and hit enter.</p>
+      }
+
+      {entries.length > 0 && <PostList posts={entries} />}
+    </main>
+
+    <Footer />
+  </body>
+</html>

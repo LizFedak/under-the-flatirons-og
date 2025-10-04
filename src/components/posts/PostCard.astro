@@ -1,6 +1,77 @@
 ---
 // src/components/posts/PostCard.astro
 import type { CollectionEntry } from 'astro:content';
+
+export interface Props {
+  post: CollectionEntry<'blog'> | any;
+  href?: string;
+}
+
+const { post, href } = Astro.props;
+const data = post?.data ?? {};
+const link = href ?? `/blog/${post?.slug ?? post?.id}/`;
+
+// ---- ALWAYS coerce to string[] ----
+function toArray(input: unknown): string[] {
+  if (Array.isArray(input)) {
+    return input
+      .flatMap(v => String(v).split(','))   // split comma-packed entries just in case
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+  if (typeof input === 'string') {
+    return input.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+const tagList: string[] = toArray(data.tags ?? data.tag);
+const authorName: string = typeof data.author === 'string'
+  ? data.author
+  : (data.author?.name ?? '');
+
+const hero: string | undefined = data.heroImage || undefined;
+const heroAlt: string = data.heroAlt ?? data.imageAlt ?? data.title ?? '';
+
+if (import.meta.env.DEV) {
+  console.log('[PostCard ok]', { slug: post?.slug, id: post?.id, tagList, authorName });
+}
+---
+
+<article class="wrap">
+  {hero && (
+    <a class="image" href={link} aria-label={data.title}>
+      <img src={hero} alt={heroAlt} loading="lazy" />
+    </a>
+  )}
+
+  <div class="content">
+    {tagList.length > 0 && (
+      <div class="pills">
+        {tagList.map((t, i) => <span class="pill" key={`${t}-${i}`}>{t}</span>)}
+      </div>
+    )}
+
+    <h2 class="title"><a href={link}>{data.title}</a></h2>
+    {data.description && <p class="description">{data.description}</p>}
+    {authorName && <p class="byline">By <span>{authorName}</span></p>}
+  </div>
+</article>
+
+<style>
+  .wrap { max-width: 720px; margin-inline: auto; }
+  .image { display:block; overflow:hidden; border-radius:8px; aspect-ratio:16/9; background:#f5f6f7; }
+  .content { margin-top:.75rem; }
+  .pills { display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:.35rem; }
+  .pill { display:inline-flex; align-items:center; padding:.15rem .5rem; border-radius:999px; background:#eef2ff; border:1px solid #e5e7eb; font-size:.75rem; white-space:nowrap; }
+  .title { margin:.25rem 0; }
+  .description { color:#525b70; margin:0; }
+  .byline { color:#6b7280; margin:.5rem 0 0; }
+</style>
+
+<!-- ---
+// src/components/posts/PostCard.astro
+import type { CollectionEntry } from 'astro:content';
 import { Image } from 'astro:assets';
 
 export interface Props {
@@ -46,4 +117,4 @@ console.log('[PostCard props]', { slug: post.slug, id: post.id, data, href, link
   .title { margin:.25rem 0;  }
   .description { color:#525b70; margin:0; }
   .byline { color:#6b7280; margin:.5rem 0 0; }
-</style>
+</style> -->

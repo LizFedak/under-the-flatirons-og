@@ -1,0 +1,154 @@
+---
+const action = "/search";
+const param  = "q";
+const q = Astro.url?.searchParams?.get(param) ?? "";
+---
+
+<div class="searchbar" data-searchbar>
+  <!-- Toggle as a BUTTON so it can’t navigate -->
+  <button
+    type="button"
+    class="icon"
+    data-toggle
+    aria-controls="search-panel"
+    aria-expanded="false"
+    aria-label="Search"
+  >
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+      <path d="M10.5 3a7.5 7.5 0 015.93 12.16l4.2 4.2-1.42 1.42-4.2-4.2A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z" />
+    </svg>
+  </button>
+
+  <!-- Slide-down panel -->
+  <div id="search-panel" class="panel" data-panel hidden>
+    <form class="form" action={action} method="get" role="search" aria-label="Site search">
+      <input
+        class="input"
+        name={param}
+        type="search"
+        placeholder="Search articles…"
+        inputmode="search"
+        autocomplete="off"
+        aria-label="Search the site"
+        value={q}
+        data-input
+      />
+      <button type="submit" class="go">Go</button>
+      <button type="button" class="close" data-close aria-label="Close search">✕</button>
+    </form>
+  </div>
+</div>
+
+<style>
+/* Place inside a relatively positioned parent (your Header already is) */
+.searchbar {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2000;
+}
+
+.icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.icon:hover,
+.icon:focus-visible {
+  background: #f3f4f6;
+  outline: none;
+}
+
+.panel {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  width: min(560px, 92vw);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  padding: 0.6rem;
+  z-index: 1500;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.panel.open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.input {
+  flex: 1;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+.go {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+}
+.close {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  line-height: 1;
+}
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const searchbar = document.querySelector("[data-searchbar]");
+    const toggleButton = searchbar.querySelector("[data-toggle]");
+    const panel = searchbar.querySelector("[data-panel]");
+    const closeButton = searchbar.querySelector("[data-close]");
+
+    // Open/close the search panel
+    const togglePanel = () => {
+      const isOpen = panel.classList.toggle("open");
+      panel.hidden = !isOpen;
+      toggleButton.setAttribute("aria-expanded", isOpen);
+      if (isOpen) {
+        panel.querySelector("[data-input]").focus();
+      }
+    };
+
+    // Close the panel
+    const closePanel = () => {
+      panel.classList.remove("open");
+      panel.hidden = true;
+      toggleButton.setAttribute("aria-expanded", "false");
+    };
+
+    // Event listeners
+    toggleButton.addEventListener("click", togglePanel);
+    closeButton.addEventListener("click", closePanel);
+
+    // Close the panel when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!searchbar.contains(e.target)) {
+        closePanel();
+      }
+    });
+  });
+</script>

@@ -1,4 +1,67 @@
 ---
+import { getEntry, getEntryBySlug, type Reference } from 'astro:content';
+
+export interface Props {
+  author?: Reference<'authors'> | { name?: string; slug?: string } | string | null;
+  link?: boolean; // allow disabling link if you want
+}
+
+const { author, link = true } = Astro.props;
+
+function slugifyName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+let name = '';
+let slug: string | undefined;
+let entry:
+  | Awaited<ReturnType<typeof getEntry<'authors'>>>
+  | Awaited<ReturnType<typeof getEntryBySlug<'authors'>>>
+  | undefined;
+
+// Case 1: author is a Reference<'authors'>
+if (author && typeof author === 'object' && 'collection' in author && 'id' in author) {
+  try {
+    entry = await getEntry(author as Reference<'authors'>);
+    name = entry?.data?.name ?? '';
+    slug = entry?.slug ?? (entry as any)?.id;
+  } catch {}
+}
+// Case 2: author is a string name
+else if (typeof author === 'string') {
+  name = author;
+  slug = slugifyName(name);
+  try { entry = await getEntryBySlug('authors', slug); } catch {}
+}
+// Case 3: author is a loose object { name?, slug? }
+else if (author && typeof author === 'object') {
+  name = author.name ?? '';
+  slug = author.slug ?? (name ? slugifyName(name) : undefined);
+  if (slug) {
+    try { entry = await getEntryBySlug('authors', slug); } catch {}
+  }
+}
+
+// Finalize name/slug using entry if we found one
+if (!name && entry) name = entry.data?.name ?? '';
+if (!slug && entry) slug = entry.slug as string | undefined;
+
+const href = slug ? `/authors/${slug}` : undefined;
+---
+
+{ name && (
+  href && link
+    ? <a href={href} class="author-link">{name}</a>
+    : <span class="author-link">{name}</span>
+)}
+
+<style>
+.author-link { text-decoration: none; color: inherit; font-weight: 600; }
+.author-link:hover { text-decoration: underline; }
+</style>
+
+
+<!-- ---
 import { getEntry, type Reference } from 'astro:content';
 
 export interface Props { author: Reference<'authors'>; }
@@ -13,4 +76,4 @@ if (!entry) throw new Error(`Author not found: ${author.id}`);
 <style>
 .author-link { text-decoration: none; color: inherit; font-weight: 600; }
 .author-link:hover { text-decoration: underline; }
-</style>
+</style> -->

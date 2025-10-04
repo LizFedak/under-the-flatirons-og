@@ -1,0 +1,193 @@
+---
+// src/pages/[category]/index.astro
+export const prerender = true;
+
+import BaseHead from '../../../components/BaseHead.astro';
+import Footer from '../../../components/Footer.astro';
+import Header from '../../../components/Header.astro';
+import { supabase } from '../../../lib/supabase';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../../consts';
+import PostCard from '../../../components/posts/PostCard.astro';
+
+// Define the possible categories for your site
+export async function getStaticPaths() {
+
+
+
+  // const CATEGORY_CANON: Record<string, string> = { dining: 'Dining', features: 'Features', business: 'Business', 'real estate': 'Real Estate', family: 'Family', events: 'Events', health: 'Health', travel: 'Travel', education: 'Education', lifestyle: 'Lifestyle', };
+  // Hardcoded list of categories
+const categories = [
+  'dining',
+  'features',
+  'business',
+  'real-estate',
+  'family',
+  'events',
+  'health',
+  'travel',
+  'education',
+  'lifestyle',
+  'features'
+];
+  return categories.map((category) => ({
+    params: { category },
+  }));
+}
+
+// Get the category from the route parameter
+let { category } = Astro.params;
+category = category.replace(/-/g, ' '); // Convert hyphens back to spaces if needed
+// Mock data for posts (replace this with your actual data)
+
+
+type PostRow = {
+  record_id: string;
+  slug?: string | null;
+  title: string;
+  description?: string | null;
+  published_at?: string | null;
+  pubDate?: string | null;
+  updated_at?: string | null;
+  hero_image?: string | null;
+  image_alt?: string | null;
+  tags?: string[] | string | null;
+  author?: string | { name: string } | null;
+  published?: boolean | null;c
+  category?: string;
+};
+
+// ALWAYS coerce to array of strings
+function toTags(input: unknown): string[] {
+  if (Array.isArray(input)) {
+    return input
+      .flatMap((v) => String(v).split(',')) // split any comma-packed entries
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  if (typeof input === 'string') {
+    return input.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  if (input == null) return [];
+  return [String(input).trim()].filter(Boolean);
+}
+
+// 1) Fetch from Supabase
+const { data: rows, error } = await supabase
+  .from('articles')
+  .select('record_id,slug,title,category,description,published_at,updated_at,hero_image,image_alt,tags,author,published,content')
+  .ilike('category', category);
+
+if (error) {
+  console.error('Supabase error on blog index:', error);
+  throw error;
+}
+
+// // 2) Filter by category tag
+// const filteredRows = (rows ?? []).filter((row) => {
+
+//   return row.category.toLowerCase() === category.toLowerCase(); // Only include rows with the matching tag
+// });
+
+// // 3) Sort newest first (by published_at if present)
+// filteredRows.sort(
+//   (a, b) =>
+//     new Date(b?.published_at ?? 0).valueOf() -
+//     new Date(a?.published_at ?? 0).valueOf()
+// );
+
+
+rows.sort(
+(a, b) =>
+  new Date(b?.published_at ?? 0).valueOf() -
+  new Date(a?.published_at ?? 0).valueOf()
+);
+
+// 4) Adapt to the shape PostCard expects (and hard-coerce tags)
+const allPosts = rows.map((r) => {
+  const safeSlug = (r.slug && r.slug.trim()) || r.record_id;
+  const authorName = typeof r.author === 'string' ? r.author : (r.author as any)?.name;
+  const coercedTags = toTags(r.tags); // 👈 ALWAYS an array now
+
+  return {
+    slug: safeSlug,            // link target /blog/[slug]
+    id: r.record_id,
+    data: {
+      title: r.title,
+      description: r.description ?? '',
+      published: r.published ?? false,
+      updated_at: r.updated_at ?? '',
+      tag: coercedTags,        // 👈 array
+      tags: coercedTags,       // 👈 array
+      author: authorName ? { name: authorName } : undefined,
+      imageAlt: r.image_alt ?? undefined,
+      heroImage: r.hero_image || null,
+      pubDate: r.published_at ? new Date(r.published_at) : undefined,
+      category: r.category,
+      content: r.content
+    },
+  };
+});
+
+if (import.meta.env.DEV) {
+  console.log(`[${category} index] first post tags:`, allPosts[0]?.data?.tags);
+}
+
+
+
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={`${category} - ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+    <style>
+      main { width: 960px; }
+      ul { display: flex; flex-wrap: wrap; gap: 2rem; list-style: none; margin: 0; padding: 0; }
+      ul li { width: calc(50% - 1rem); }
+      ul li * { text-decoration: none; transition: 0.2s ease; }
+      ul li img { margin-bottom: 0.5rem; border-radius: 12px; }
+      ul li a { display: block; }
+      .title { margin: 0; color: rgb(var(--black)); line-height: 1; }
+      .date { margin: 0; color: rgb(var(--gray)); }
+      ul li a:hover h4,
+      ul li a:hover .date { color: rgb(var(--accent)); }
+      ul a:hover img { box-shadow: var(--box-shadow); }
+      @media (max-width: 720px) {
+        ul { gap: 0.5em; }
+        ul li { width: 100%; text-align: center; }
+      }
+    </style>
+  </head>
+  <body>
+    <Header />
+    <main>
+
+      <section>
+        <ul>
+          {allPosts.map((post) => {
+            const href = `/section/${category}/${String(post.slug).replace(/^\/+|\/+$/g, '')}`;
+            return (
+              <li>
+                <PostCard post={post} href={href} />
+              </li>
+            );
+          })}
+        </ul>
+
+        {import.meta.env.DEV && (
+          <details style="margin-top:1rem">
+            <summary>Debug: first post</summary>
+            <pre style="white-space:pre-wrap;font-size:.85rem">
+{JSON.stringify(allPosts?.[0], null, 2)}
+            </pre>
+          </details>
+        )}
+
+        
+      </section>
+
+
+    </main>
+    <Footer />
+  </body>
+</html>

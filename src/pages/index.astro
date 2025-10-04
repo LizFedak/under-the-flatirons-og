@@ -1,22 +1,105 @@
 ---
-export const prerender = true;
+// src/pages/index.astro
+// ORIGINAL LAYOUT • Supabase-powered (featured + published)
+export const prerender = false; // set to true if you want a build-time snapshot
+
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import { getCollection } from 'astro:content';
+
 import HeadlineCard from '../components/posts/HeadlineCard.astro';
 import PostList from '../components/posts/PostList.astro';
 import SmallCardList from '../components/posts/SmallCardList.astro';
 
-const all = await getCollection('blog');
+import { supabase } from '../lib/supabase';
+import { getEntryBySlug } from 'astro:content';
 
-const featured = all.find(p => p.data?.featured === true)
-  ?? all.toSorted((a, b) => (b.data.pubDate as Date).getTime() - (a.data.pubDate as Date).getTime())[0];
+type Row = {
+  record_id: string;
+  slug?: string | null;
+  title: string;
+  description?: string | null;
+  published_at?: string | null;
+  updated_at?: string | null;
+  hero_image?: string | null;
+  image_alt?: string | null;
+  tags?: string[] | string | null;
+  author?: string | { name?: string } | null;
+  featured?: boolean | null;
+  published?: boolean | null;
+  category?: string | null;
+};
 
-const rest = all.filter(p => p !== featured)
-  .toSorted((a, b) => (b.data.pubDate as Date).getTime() - (a.data.pubDate as Date).getTime());
+// helpers
+function toTags(input: unknown): string[] {
+  if (Array.isArray(input)) return input.flatMap(v => String(v).split(',')).map(s => s.trim()).filter(Boolean);
+  if (typeof input === 'string') return input.split(',').map(s => s.trim()).filter(Boolean);
+  return [];
+}
+function slugifyName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
 
+// 1) fetch FEATURED + published
+const { data, error } = await supabase
+  .from('articles')
+  .select('record_id,slug,category,title,description,published_at,updated_at,hero_image,image_alt,tags,author,featured,published')
+  .eq('published', true)
+  .eq('featured', true);
+
+if (error) {
+  console.error('Supabase homepage query error:', error);
+  throw error;
+}
+
+// 2) newest first
+const rows: Row[] = (data ?? []).sort(
+  (a, b) => new Date(b?.published_at ?? 0).valueOf() - new Date(a?.published_at ?? 0).valueOf()
+);
+
+// 3) adapt to your component shape: { slug, id, data: {...} }
+const entries = await Promise.all(
+  rows.map(async (r) => {
+    const safeSlug = (r.slug && r.slug.trim()) || r.record_id;
+
+    // author: plain string → slug + optional enrichment from authors collection
+    const authorName = typeof r.author === 'string' ? r.author : (r.author?.name ?? '');
+    const authorId = authorName ? slugifyName(authorName) : undefined;
+
+    let authorObj: any = authorName ? { name: authorName, slug: authorId } : undefined;
+    if (authorId) {
+      try {
+        const entry = await getEntryBySlug('authors', authorId);
+        if (entry) authorObj = { slug: authorId, name: entry.data?.name ?? authorName, ...entry.data };
+      } catch { /* authors collection may not exist yet */ }
+    }
+
+    const tagList = toTags(r.tags);
+
+    return {
+      slug: safeSlug,
+      id: r.record_id,
+      data: {
+        title: r.title,
+        description: r.description ?? '',
+        featured: true,
+        pubDate: r.published_at ? new Date(r.published_at) : undefined,
+        updated_at: r.updated_at ?? '',
+        heroImage: r.hero_image || null,
+        imageAlt: r.image_alt ?? undefined,
+        author: authorObj,
+        tag: tagList,
+        tags: tagList,
+        category: r.category
+      },
+    };
+  })
+);
+
+// 4) keep your original variables & layout contract
+const featured = entries[0] ?? null;
+const rest = entries.slice(1);
 const leftPosts  = rest.filter((_, i) => i % 2 === 0).slice(0, 8);
 const rightPosts = rest.filter((_, i) => i % 2 === 1).slice(0, 8);
 ---
@@ -70,77 +153,3 @@ const rightPosts = rest.filter((_, i) => i % 2 === 1).slice(0, 8);
     <script type="module" src="/src/scripts/handle-magic-link.js"></script>
   </body>
 </html>
-
-
-<!-- ---
-export const prerender = true;
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
-import { getCollection } from 'astro:content';
-import HeadlineCard from '../components/posts/HeadlineCard.astro';
-import PostList from '../components/posts/PostList.astro';
-import SmallCardList from '../components/posts/SmallCardList.astro';
-
-const all = await getCollection('blog');
-
-// pick featured if present; else latest by pubDate
-const featured = all.find(p => p.data?.featured === true)
-  ?? all.toSorted((a, b) => (b.data.pubDate as Date).getTime() - (a.data.pubDate as Date).getTime())[0];
-
-const rest = all.filter(p => p !== featured)
-  .toSorted((a, b) => (b.data.pubDate as Date).getTime() - (a.data.pubDate as Date).getTime());
-
-// split rest across left/right (balanced alternating)
-const leftPosts  = rest.filter((_, i) => i % 2 === 0).slice(0, 8);
-const rightPosts = rest.filter((_, i) => i % 2 === 1).slice(0, 8);
----
-
-<!doctype html>
-<html lang="en">
-  <head>
-    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-    <style>
-      .layout {
-        display: grid;
-        grid-template-columns: 1fr 2fr 1fr;
-        grid-template-areas: "left headline right";
-        gap: 1rem;
-        align-items: start;
-      }
-      .headline { grid-area: headline; }
-      .left { grid-area: left; }
-      .right { grid-area: right; }
-
-      @media (max-width: 900px) {
-        .layout {
-          grid-template-columns: 1fr;
-          grid-template-areas:
-            "headline"
-            "left"
-            "right";
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <Header />
-    <main class="container">
-      <section class="layout">
-        <aside class="left">
-          <PostList posts={leftPosts} />
-        </aside>
-
-        <section class="headline">
-          {featured && <HeadlineCard post={featured} />}
-        </section>
-
-        <aside class="right">
-          <SmallCardList posts={rightPosts} />
-        </aside>
-      </section>
-    </main>
-    <Footer />
-  </body>
-</html> -->

@@ -4,6 +4,7 @@ import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import { Image } from 'astro:assets';
+import AuthorBlock from '../components/posts/AuthorBlock.astro';
 
 export interface Props {
   title: string;
@@ -15,13 +16,14 @@ export interface Props {
   imageAlt?: string | null;
 
   // dates from DB (ISO strings) or JS Date
-  pubDate?: string | Date | null;
+  published_at?: string | Date | null;
   updatedAt?: string | Date | null;
 
   // optional extras you’re already passing
   tag?: string | string[] | null;
   author?: string | { name?: string | null } | null;
   featured?: boolean | null;
+  content_md?: string | any; // markdown content as string or Astro component
 }
 
 const {
@@ -30,16 +32,24 @@ const {
   heroImageUrl,
   heroImage,
   imageAlt,
-  pubDate,
+  published_at,
   updatedAt,
   tag,
   author,
+  content_md,
 } = Astro.props as Props;
+
+function toArray(input: string | string[] | null | undefined): string[] {
+  if (!input) return [];
+  if (Array.isArray(input)) return input;
+  if (typeof input === "string") return input.split(",").map(s => s.trim()).filter(Boolean);
+  return [];
+}
 
 const authorName =
   typeof author === 'string' ? author : author?.name ?? null;
 
-const tagList = Array.isArray(tag) ? tag : (tag ? [tag] : []);
+const tagList = toArray(tag);
 
 const hasMetaImage = heroImage && typeof heroImage === 'object' && 'src' in heroImage;
 const altText = imageAlt ?? title;
@@ -116,6 +126,9 @@ const altText = imageAlt ?? title;
 		<Header />
 		<main>
 			<article>
+
+
+<pre>{JSON.stringify(Astro.props, null, 2)}</pre>
 				{(hasMetaImage || heroImageUrl) && (
 					<div class="hero-image">
 						{hasMetaImage ? (
@@ -128,13 +141,14 @@ const altText = imageAlt ?? title;
 				<div class="prose">
 					<div class="title">
 						<div class="date">
-							{pubDate && <FormattedDate date={pubDate} />}
+							{published_at && <FormattedDate date={published_at} />}
 							{updatedAt && (
 								<div class="last-updated-on">
 									Last updated <FormattedDate date={updatedAt} />
 								</div>
 							)}
-							{authorName && <div class="byline">By <strong>{authorName}</strong></div>}
+							{authorName && <div class="byline">By <strong>{<AuthorBlock author={author} />}</strong></div>}
+							
 							{tagList.length > 0 && (
 								<div class="pills">
 									{tagList.map((t) => <span class="pill">{t}</span>)}
@@ -143,8 +157,13 @@ const altText = imageAlt ?? title;
 						</div>
 						<h1>{title}</h1>
 						{description && <p style="color:rgb(var(--gray)); margin:.25rem 0 0;">{description}</p>}
+						
+						<p>{content_md}</p>
 						<hr />
 					</div>
+
+					<!-- <script defer src="https://cdn.commento.io/js/commento.js"></script> -->
+<!-- <div id="commento"></div> -->
 					<slot />
 				</div>
 			</article>
