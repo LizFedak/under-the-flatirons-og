@@ -7,77 +7,95 @@ const currentPath = Astro.url.pathname;
 ---
 
 <header class="site-header">
-  <h2><a href="/">{SITE_TITLE}</a></h2>
+  <div class="header-row">
+    <h2 class="site-title"><a href="/">{SITE_TITLE}</a></h2>
 
-  
+    <!-- Mobile menu button -->
+    <button
+      class="menu-toggle"
+      aria-label="Open menu"
+      aria-expanded="false"
+      aria-controls="site-nav"
+      id="menuToggleBtn"
+    >
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
+  </div>
 
-  <ul class="nav internal-links">
-    <li><HeaderLink href="/section/features">Features</HeaderLink></li>
-    <li><HeaderLink href="/calendar">Calendar</HeaderLink></li>
-    <li><HeaderLink href="/section/dining">Dining</HeaderLink></li>
-    <li><HeaderLink href="/section/business">Business</HeaderLink></li>
-    <li><HeaderLink href="/section/real-estate">Real Estate</HeaderLink></li>
-    <li>
-		<HeaderLink href="/family">Family</HeaderLink>
-      	<ul>
-        	<li><a href="/family/boulder-kids-activities">Kids Activities Finder</a></li>
-      	</ul>
-    </li>
-  </ul>
+  <nav id="site-nav" class="nav-wrap" aria-label="Primary">
+    <ul class="nav internal-links">
+      <li><HeaderLink href="/section/features">Features</HeaderLink></li>
+      <li><HeaderLink href="/calendar">Calendar</HeaderLink></li>
+      <li><HeaderLink href="/section/dining">Dining</HeaderLink></li>
+      <li><HeaderLink href="/section/business">Business</HeaderLink></li>
+      <li><HeaderLink href="/section/real-estate">Real Estate</HeaderLink></li>
+      <li class="has-submenu">
+        <HeaderLink href="/family">Family</HeaderLink>
+        <button class="submenu-toggle" aria-label="Expand Family submenu" aria-expanded="false"></button>
+        <ul class="submenu">
+          <li><a href="/family/boulder-kids-activities">Kids Activities Finder</a></li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
 </header>
 
 {currentPath !== '/search' && <SearchBar />}
 <UserBadge />
 
 <style>
-/* Header title uses your old look */
-.site-header {
-  margin: 0;
-  padding: 0 1em;
-  position: relative;
-  z-index: 10;
+:root {
+  --header-pad: 0 1rem;
+  --nav-gap: 0.75rem;
 }
 
-.site-header h2 {
+/* Container */
+.site-header {
+  margin: 0;
+  padding: var(--header-pad);
+  position: relative;
+  z-index: 50;
+}
+
+/* Title */
+.site-title {
   margin: 10px 0;
   font-size: 3em;
   font-family: "IM FELL French Canon Roman";
   text-align: center;
   border-bottom: 1px solid var(--accent);
 }
+.site-title a,
+.site-title a.active { text-decoration: none; color: inherit; }
 
-.site-header h2 a,
-.site-header h2 a.active {
-  text-decoration: none;
-  color: inherit;
+/* Row aligns title + hamburger on mobile */
+.header-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Reset */
-.nav,
-.nav ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
+.nav, .nav ul { list-style: none; margin: 0; padding: 0; }
+.nav > li { position: relative; }
 
-/* Top-level menu – matches your uppercase, size, font, colors */
+/* Desktop nav */
+.nav-wrap {
+  width: 100%;
+}
 .nav {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.75rem;
-  width: 100%;
+  gap: var(--nav-gap);
   text-transform: uppercase;
   font-size: 14px;
   font-family: 'NataSans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-weight: 400;
 }
-
-.nav > li {
-  position: relative;
-}
-
-/* Top-level links */
 .nav > li > a {
   display: block;
   padding: 0.75rem 0.5rem;
@@ -86,55 +104,104 @@ const currentPath = Astro.url.pathname;
   border-bottom: 4px solid transparent;
   transition: border-color 120ms ease;
 }
-
 .nav > li > a:hover,
 .nav > li > a:focus-visible,
-.nav > li > a.active {
-  border-bottom-color: var(--accent);
-  outline: none;
-}
+.nav > li > a.active { border-bottom-color: var(--accent); outline: none; }
 
-/* Submenu (hidden by default) */
-.nav li ul {
+/* Submenu (desktop) */
+.submenu {
   display: none;
   position: absolute;
   top: 100%;
   left: 0;
-  min-width: 200px;
+  min-width: 220px;
   background: #fff;
   border: 1px solid var(--gray-light, #e5e9f0);
   box-shadow: 0 8px 24px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.06);
   padding: 0.25rem 0;
   z-index: 1000;
-  text-transform: none;   /* subitems not uppercase */
+  text-transform: none;
 }
-
-/* Show submenu on hover or keyboard focus */
-.nav li:hover > ul,
-.nav li:focus-within > ul {
+.has-submenu:hover > .submenu,
+.has-submenu:focus-within > .submenu { display: block; }
+.submenu li a {
   display: block;
-}
-
-/* Submenu links inherit your font & color */
-.nav li ul li a {
-  display: block;
-  padding: 0.5rem 0.75rem;
+  padding: 0.65rem 0.9rem;
   font-family: 'NataSans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  font-weight: 400;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--black);
   text-decoration: none;
   white-space: nowrap;
 }
+.submenu li a:hover,
+.submenu li a:focus-visible { background: rgba(0,0,0,0.04); outline: none; }
 
-.nav li ul li a:hover,
-.nav li ul li a:focus-visible {
-  background: rgba(0,0,0,0.04);
-  outline: none;
+/* Hamburger */
+.menu-toggle {
+  display: none;
+  width: 42px;
+  height: 38px;
+  padding: 0;
+  margin: 0;
+  border: 1px solid var(--gray-light, #e5e9f0);
+  border-radius: 8px;
+  background: #fff;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
+.menu-toggle .bar {
+  width: 20px;
+  height: 2px;
+  background: currentColor;
+  display: block;
+}
+.menu-toggle[aria-expanded="true"] .bar:nth-child(2) { opacity: 0; }
+.menu-toggle[aria-expanded="true"] .bar:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.menu-toggle[aria-expanded="true"] .bar:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+.menu-toggle .bar { transition: transform 120ms ease, opacity 120ms ease; }
 
-/* Optional: keep social links hidden on small screens if you re-add them */
-@media (max-width: 720px) {
-  .social-links { display: none; }
+/* Submenu toggle pill (mobile) */
+.submenu-toggle {
+  display: none;
+  position: absolute;
+  right: 0.75rem;
+  top: 0.55rem;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--gray-light, #e5e9f0);
+  border-radius: 999px;
+  background: #fff;
 }
-</style>
+.submenu-toggle::after {
+  content: "+";
+  display: block;
+  font-size: 18px;
+  line-height: 34px;
+  text-align: center;
+}
+.submenu-toggle[aria-expanded="true"]::after { content: "–"; }
+
+/* -------- Mobile styles -------- */
+@media (max-width: 768px) {
+  .site-title { font-size: 2.2em; border-bottom-width: 0; }
+  .header-row { grid-template-columns: 1fr auto; }
+  .menu-toggle { display: inline-flex; }
+
+  /* Off-canvas style overlay */
+  .nav-wrap {
+    position: fixed;
+    inset: 0 0 0 30%;
+    translate: 100% 0;
+    background: #fff;
+    box-shadow: -8px 0 24px rgba(0,0,0,0.08);
+    transition: translate 180ms ease-out;
+    padding-top: 0.5rem;
+    overflow-y: auto;
+  }
+  .nav-wrap.open { translate: 0 0; }
+
+  /* Full-width on very small phones */
+  @media (max-width: 420px) {
+    .nav-wrap { inset: 0; }
+  }

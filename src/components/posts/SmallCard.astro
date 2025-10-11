@@ -9,7 +9,9 @@ export interface Props {
 
 const { post, showThumb = true } = Astro.props;
 const d = post?.data ?? {};
-const href = `/blog/${post?.slug ?? post?.id}/`;
+const href = `/section/${d?.category.toLowerCase()}/${d?.id}`;
+
+// const href = `/section/${categorySlug}/${postSlug}`;
 
 // --- helpers ---
 function toArray(input: unknown): string[] {
