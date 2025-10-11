@@ -205,3 +205,100 @@ const currentPath = Astro.url.pathname;
   @media (max-width: 420px) {
     .nav-wrap { inset: 0; }
   }
+
+  /* Vertical list with large tap targets */
+  .nav {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.25rem 0.5rem 1.5rem;
+  }
+  .nav > li > a {
+    padding: 0.9rem 0.9rem;
+    border-bottom: 1px solid var(--gray-light, #e5e9f0);
+  }
+  .nav > li:last-child > a { border-bottom: none; }
+
+  /* Mobile submenu: inline accordion */
+  .has-submenu { padding-right: 2.5rem; }
+  .submenu-toggle { display: block; }
+  .has-submenu .submenu {
+    position: static;
+    display: none;
+    box-shadow: none;
+    border: 0;
+    padding: 0;
+  }
+  .has-submenu .submenu li a {
+    padding: 0.65rem 1.25rem;
+    border-bottom: 1px dashed var(--gray-light, #e5e9f0);
+  }
+  .has-submenu .submenu li:last-child a { border-bottom: none; }
+
+  /* When expanded via JS */
+  .has-submenu.open > .submenu { display: block; }
+}
+
+/* Optional: keep social links hidden on small screens if you re-add them */
+@media (max-width: 720px) {
+  .social-links { display: none; }
+}
+</style>
+
+<script is:raw>
+/* Lightweight toggles without a framework */
+(function () {
+  const nav = document.getElementById('site-nav');
+  const btn = document.getElementById('menuToggleBtn');
+
+  if (!nav || !btn) return;
+
+  const closeOnEsc = (e) => {
+    if (e.key === 'Escape' && nav.classList.contains('open')) {
+      nav.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.focus();
+    }
+  };
+
+  btn.addEventListener('click', () => {
+    const open = nav.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+
+  document.addEventListener('keydown', closeOnEsc);
+
+  // Submenu accordions on mobile
+  nav.querySelectorAll('.has-submenu').forEach((item) => {
+    const toggle = item.querySelector('.submenu-toggle');
+    if (!toggle) return;
+
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isOpen = item.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(isOpen));
+      // Optional: close other open submenus for a cleaner mobile UX
+      if (isOpen) {
+        nav.querySelectorAll('.has-submenu.open').forEach((other) => {
+          if (other !== item) {
+            other.classList.remove('open');
+            const t = other.querySelector('.submenu-toggle');
+            if (t) t.setAttribute('aria-expanded', 'false');
+          }
+        });
+      }
+    });
+  });
+
+  // Close menu when clicking a link (mobile)
+  nav.addEventListener('click', (e) => {
+    const target = e.target;
+    if (target instanceof Element && target.tagName === 'A' && nav.classList.contains('open')) {
+      nav.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+  });
+})();
+</script>
