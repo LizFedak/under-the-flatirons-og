@@ -1,0 +1,96 @@
+---
+import type { z } from 'zod';
+import { EventSchema } from '../../schemas/event'; // adjust path
+
+type Event = z.infer<typeof EventSchema>;
+
+interface Props {
+  event: Event;
+  href?: string; // optional deep link
+}
+
+const { event, href } = Astro.props;
+
+// helpers
+const tz = event.timezone || 'America/Denver';
+
+function fmtTime(d?: Date | null, allDay?: boolean) {
+  if (!d) return '';
+  if (allDay) return 'All day';
+  try {
+    return new Date(d).toLocaleTimeString('en-US', {
+      timeZone: tz,
+      hour: 'numeric',
+    }).toLowerCase();
+  } catch {
+    return '';
+  }
+}
+
+const timeText = fmtTime(event.start_at, event.all_day);
+const agesText = event.ages?.length ? `Ages: ${event.ages.join(', ')}` : '';
+const tags = event.categories || [];
+const hasPlace = Boolean(event.venue || event.locality);
+
+const heroSrc = event.hero_image ?? undefined;
+const imageAlt = event.image_alt || event.title;
+---
+
+<!-- one container -->
+<div class="flex gap-6 rounded-2xl border border-gray-200 p-4 hover:shadow-md transition">
+  <!-- image left -->
+  <div class="w-[320px] max-w-[45%] shrink-0 rounded-xl overflow-hidden bg-gray-50">
+    {heroSrc ? (
+      <img src={heroSrc} alt={imageAlt} class="block w-full h-full object-cover" loading="lazy" />
+    ) : (
+      <div class="aspect-[16/10]" />
+    )}
+  </div>
+
+  <!-- content right -->
+  <div class="flex-1 min-w-0">
+    <!-- line 1: time -->
+    {timeText && (
+      <p class="mb-1 text-[15px] font-medium text-emerald-600 flex items-center gap-2">
+        <span aria-hidden>🕒</span>
+        <span>{timeText}</span>
+      </p>
+    )}
+
+    <!-- line 2: title -->
+    <h3 class="m-0 text-xl font-semibold text-black">
+      {href ? (
+        <a href={href} class="underline decoration-pink-400 decoration-2 underline-offset-4 hover:text-purple-700 transition-colors">
+          {event.title}
+        </a>
+      ) : (
+        <span class="underline decoration-pink-400 decoration-2 underline-offset-4">{event.title}</span>
+      )}
+    </h3>
+
+    <!-- line 3: ages -->
+    {agesText && (
+      <p class="mt-2 text-[15px] text-sky-700 flex items-center gap-2">
+        <span aria-hidden>🌱</span>
+        <span>{agesText}</span>
+      </p>
+    )}
+
+    <!-- line 4: tags -->
+    {tags.length > 0 && (
+      <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[17px] text-sky-700">
+        {tags.map((t) => <span>{t}</span>)}
+      </div>
+    )}
+
+    <!-- line 5: venue, neighborhood -->
+    {hasPlace && (
+      <p class="mt-2 text-[15px]">
+        <span aria-hidden>📍</span>
+        {event.venue && <span class="text-purple-600">{event.venue}</span>}
+        {event.venue && event.locality && <span>&nbsp;&nbsp;</span>}
+        {event.locality && <span class="text-orange-500">{event.locality}</span>}
+      </p>
+    )}
+  </div>
+</div>

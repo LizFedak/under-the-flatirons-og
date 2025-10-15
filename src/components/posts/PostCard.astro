@@ -9,10 +9,8 @@ export interface Props {
 
 const { post, href } = Astro.props;
 const data = post?.data ?? {};
-// const link = href ?? `/blog/${post?.slug ?? post?.id}/`;
 
-
-const link = `/section/${post?.category}/${post?.id}`;
+const link = `/section/${post?.data.category.toLowerCase()}/${post?.id}`;
 
 // ---- ALWAYS coerce to string[] ----
 function toArray(input: unknown): string[] {

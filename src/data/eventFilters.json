@@ -1,0 +1,43 @@
+[
+    {
+    "label": "Category",
+    "options": [
+      { "value": "Animals" },
+      { "value": "Art" },
+      { "value": "Attractions" },
+      { "value": "Books & Readings" },
+      { "value": "Caribbean" },
+      { "value": "Classes" },
+      { "value": "Comedy" },
+      { "value": "Community" },
+      { "value": "Craft & DIY" },
+      { "value": "Dance" },
+      { "value": "En Español" },
+      { "value": "Environment" },
+      { "value": "Expo" },
+      { "value": "Festivals" },
+      { "value": "Film" },
+      { "value": "Food & Drink" },
+      { "value": "Free" },
+      { "value": "Fundraisers" },
+      { "value": "Games" },
+      { "value": "Health & Fitness" },
+      { "value": "History & Culture" },
+      { "value": "Holiday" },
+      { "value": "LGBTQ+" },
+      { "value": "Markets" },
+      { "value": "Music" },
+      { "value": "Nightlife" },
+      { "value": "Open Houses" },
+      { "value": "Outdoors" },
+      { "value": "Special Needs" },
+      { "value": "Sports" },
+      { "value": "Talks" },
+      { "value": "Theater" },
+      { "value": "Tours" },
+      { "value": "Vintage" },
+      { "value": "Virtual" },
+      { "value": "Volunteering" }
+    ]
+  }
+]

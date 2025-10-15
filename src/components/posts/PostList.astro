@@ -18,10 +18,7 @@ function slugifyName(name: string): string {
   return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 // pick the category for the URL: prefer data.category or data.section, else first tag; fallback to "uncategorized"
-function pickCategorySlug(d: any): string {
-  const candidate = d.category;
-  return slugifyName(String(candidate));
-}
+
 ---
 
 <ul class="postlist">
@@ -29,10 +26,9 @@ function pickCategorySlug(d: any): string {
     const d = p?.data ?? {};
 
     const postSlug = String(p?.slug ?? p?.id);
-    const categorySlug = pickCategorySlug(d);
-
+    
     // NEW: /section/{category}/{post}
-    const href = `/section/${categorySlug}/${postSlug}`;
+    const href = `/section/${d.category}/${postSlug}`;
 
     const tagList = toArray(d.tags ?? d.tag);
 

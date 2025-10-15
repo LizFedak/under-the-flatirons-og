@@ -24,6 +24,7 @@ export interface Props {
   author?: string | { name?: string | null } | null;
   featured?: boolean | null;
   content_md?: string | any; // markdown content as string or Astro component
+  category?: string | null;
 }
 
 const {
@@ -37,6 +38,7 @@ const {
   tag,
   author,
   content_md,
+  category
 } = Astro.props as Props;
 
 function toArray(input: string | string[] | null | undefined): string[] {

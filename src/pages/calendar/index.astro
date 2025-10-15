@@ -1,102 +1,177 @@
 ---
-export const prerender = true;
-import { Image } from 'astro:assets';
-import { getCollection } from 'astro:content';
+export const prerender = false;
+
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import EventDateFilter from '../../components/events/EventDateFilter.astro';
+import EventCard from '../../components/events/EventCard.astro';
+// import { supabase } from '../../lib/supabase';
+import rawEvents from '../../data/eventDummyData.json' assert { type: 'json' };
 
+type EventRow = {
+  id?: string;
+  slug: string;
+  title: string;
+  description?: string | null;
+  start_at: string;
+  end_at?: string | null;
+  all_day?: boolean | null;
+  timezone?: string | null;
+  hero_image?: string | null;
+  image_alt?: string | null;
+  location_full?: string | null;
+  venue?: string | null;
+  locality?: string | null;
+  maps_url?: string | null;
+  website_url?: string | null;
+  price_display?: string | null;
+  is_free?: boolean | null;
+  ages?: string[] | null;
+  categories?: string[] | null;
+  published?: boolean | null;
+};
 
-function formatDate(date: Date) {
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+/* ====================== Denver-local helpers (no UTC) ====================== */
+const DENVER_TZ = 'America/Denver' as const;
+
+/** Start/end of LOCAL day */
+const SOD = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const EOD = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+/** Add calendar days (LOCAL) */
+const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+/** YYYY-MM-DD key using LOCAL getters */
+const keyYMD = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+/** Parse 'YYYY-MM-DD' as LOCAL date (avoid UTC shift) */
+const parseYMDLocal = (s?: string | null): Date | null => {
+  if (!s) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return null;
+  const [, yy, mm, dd] = m;
+  return new Date(Number(yy), Number(mm) - 1, Number(dd));
+};
+/** “Today” as a Denver calendar date (works on server or client) */
+const todayDenver = (): Date => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: DENVER_TZ, year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(new Date());
+  const get = (t: string) => Number(parts.find(p => p.type === t)!.value);
+  return new Date(get('year'), get('month') - 1, get('day'));
+};
+/** Heading like “Tuesday, Oct 14, 2025” in Denver */
+const headingFor = (d: Date) =>
+  new Intl.DateTimeFormat('en-US', {
+    weekday:'long', month:'short', day:'numeric', year:'numeric', timeZone: DENVER_TZ
+  }).format(d);
+
+/* ====================== URL → Denver-local range ====================== */
+const url = new URL(Astro.request.url);
+const qStart = parseYMDLocal(url.searchParams.get('start'));
+const qEnd   = parseYMDLocal(url.searchParams.get('end'));
+
+const denverToday = SOD(todayDenver());
+const rangeStart = qStart ? SOD(qStart) : denverToday;
+const rangeEnd   = qEnd   ? SOD(qEnd)   : addDays(denverToday, 6);
+
+/* ====================== Normalize dummy events ====================== */
+const toLocalDate = (v: unknown): Date | null => {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  if (typeof v === 'string') {
+    // Date-only → local; otherwise native parse (respects included offsets)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return parseYMDLocal(v);
+    return new Date(v);
+  }
+  return new Date(v as any);
+};
+
+const events = (rawEvents as EventRow[]).map((e) => {
+  const start = toLocalDate(e.start_at)!;
+  const end   = e.end_at ? toLocalDate(e.end_at) : null;
+  return {
+    ...e,
+    start_at: start,
+    end_at: end,
+    all_day: !!e.all_day,
+    timezone: e.timezone || DENVER_TZ,
+    ages: e.ages ?? [],
+    categories: e.categories ?? [],
+    price_display: e.price_display ?? (e.is_free ? 'Free' : ''),
+  };
+});
+
+/* ====================== Filter overlap + group by LOCAL day ====================== */
+const filtered = events.filter((ev) => {
+  const s = SOD(ev.start_at as unknown as Date);
+  const e = ev.end_at ? EOD(ev.end_at as unknown as Date) : EOD(ev.start_at as unknown as Date);
+  return s <= EOD(rangeEnd) && e >= SOD(rangeStart);
+});
+
+filtered.sort((a, b) =>
+  (a.start_at as unknown as Date).valueOf() - (b.start_at as unknown as Date).valueOf()
+);
+
+const groups = new Map<string, typeof filtered>();
+for (const ev of filtered) {
+  const key = keyYMD(SOD(ev.start_at as unknown as Date));
+  if (!groups.has(key)) groups.set(key, []);
+  groups.get(key)!.push(ev);
 }
 
-const posts = (await getCollection('events'))
-  .sort((a, b) => b.data.eventDate.valueOf() - a.data.eventDate.valueOf()) // Sort by eventDate
-  .map(post => ({
-    ...post,
-    formattedDate: formatDate(post.data.eventDate),  // Format eventDate
-  }));
+/* ====================== Days list (inclusive) ====================== */
+const days: Date[] = [];
+for (let d = new Date(rangeStart); d <= rangeEnd; d = addDays(d, 1)) days.push(new Date(d));
 ---
-
 
 
 <!doctype html>
 <html lang="en">
-	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js" defer></script> <!-- `defer` ensures the script is loaded after the page -->
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <head>
+    <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+  </head>
+  <body>
+    <Header />
+    <main>
+      <section class="flex flex-col gap-6">
+        <EventDateFilter storageKey="eventDateFilter" paramStart="start" paramEnd="end" />
+        <div class="flex gap-8">
+          <section class="flex-1">
+            {
+              days.map((day) => {
+                const key = keyYMD(day);
+                const dayEvents = groups.get(key) ?? [];
+                return (
+                  <>
+                    <h2 class="text-2xl font-semibold mt-6 mb-3">{headingFor(day)}</h2>
+                    {dayEvents.length === 0 ? (
+                      <p class="text-sm text-gray-500">No events for this day.</p>
+                    ) : (
+                      <ul class="flex flex-col gap-4 list-none p-0 m-0">
+                        {dayEvents.map((ev) => (
+                          <li><EventCard event={ev} href={`/events/${ev.slug}`} /></li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                );
+              })
+            }
+          </section>
 
+          <aside class="w-[320px] shrink-0">
+            <h3 class="text-lg font-semibold mb-2">Featured</h3>
+            <p class="text-sm text-gray-600">Add featured modules here.</p>
+          </aside>
+        </div>
+      </section>
+    </main>
+    <Footer />
+  </body>
 
-
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
-
-		<style>
-			/* #calendar-list ul li {
-				display: flex;
-			} */
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			<section>
-				<input type="text" id="rangeDate" class="inputtextstyle" placeholder="Pick a date" data-input>
-				<div id="calendar-list">
-					<input class="search" placeholder="Search for events" />
-					<ul class="list grid gap-[20px]">
-					  {posts.map((event) => (
-						<li class="flex flex-row border-solid border-1 p-5 rounded-lg gap-[20px]">
-							
-							<div class="w-3/4">
-						  <p class="event-time">{event.data.eventTime}</p>
-						  <h3 class="event-title">{event.data.title}</h3>
-						  <p class="event-date">{event.formattedDate}</p>
-						</div>
-						<div class="w-1/4">
-						  {event.data.heroImage && (
-							<Image width={300} height={200} src={event.data.heroImage} alt={event.data.title} />
-						  )}
-						  </div>
-						
-						</li>
-					  ))}
-					</ul>
-				  </div>
-			</section>
-		</main>
-		<Footer />
-	</body>
-	<script>
-		let options = {listClass: "list",
-		valueNames: ['event-title'],
-		}
-		new List("calendar-list", options)
-
-
-		let cal = document.querySelector("#rangeDate")
-		console.log(cal)
-		// cal.flatpickr({
-        //     mode: 'range',
-        //     dateFormat: "Y-m-d",
-        //     open: true,
-        //     inline: true
-        // }); 
-
-		flatpickr("#rangeDate", {
-			mode: 'range',
-            dateFormat: "Y-m-d",
-            open: true,
-            inline: true})
-
-
-	</script>
+  <script>
+    // Keep SSR source of truth: when the picker changes (it updates URL), reload.
+    window.addEventListener('eventDateFilterChange', () => location.href = location.href);
+  </script>
 </html>
-

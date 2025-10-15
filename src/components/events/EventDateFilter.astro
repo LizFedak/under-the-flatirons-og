@@ -1,0 +1,76 @@
+---
+const {
+  label = 'Date',
+  storageKey = 'eventDateFilter',
+  paramStart = 'start',
+  paramEnd = 'end',
+  navigateOnChange = true,
+} = Astro.props;
+
+// keep CSS import where you like; client will import flatpickr via Vite
+import 'flatpickr/dist/flatpickr.css';
+---
+
+<event-date-filter
+  class="edf-root"
+  data-label={label}
+  data-storage-key={storageKey}
+  data-param-start={paramStart}
+  data-param-end={paramEnd}
+  data-navigate={navigateOnChange ? 'true' : 'false'}
+>
+  <button type="button" class="pill" aria-haspopup="dialog" aria-expanded="false">
+    {label} <span class="chev">▾</span>
+  </button>
+
+  <div class="popover hidden" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="presets">
+        <button class="preset" data-preset="all">All upcoming dates</button>
+        <button class="preset" data-preset="today">Today</button>
+        <button class="preset" data-preset="tomorrow">Tomorrow</button>
+        <button class="preset" data-preset="next7">Next 7 days</button>
+        <button class="preset" data-preset="next14">Next 14 days</button>
+        <button class="preset" data-preset="weekend">This Weekend</button>
+        <button class="preset" data-preset="nextweek">Next Week</button>
+      </div>
+
+      <div class="cal-wrap">
+        <!-- we’ll create/destroy an <input> here on open/close -->
+        <div class="cal-mount"></div>
+        <div class="cta">
+          <button class="btn text" data-action="cancel">Cancel</button>
+          <button class="btn primary" data-action="apply">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</event-date-filter>
+
+<style>
+  .edf-root { position: relative; display: inline-block; }
+  .pill { display:inline-flex; align-items:center; gap:.35rem; padding:.6rem .9rem; border:1px solid #ddd; border-radius:999px; background:#fff; cursor:pointer; }
+  .chev { font-size:.9em; opacity:.7; }
+  .popover { position:absolute; z-index:30; top:calc(100% + .5rem); left:0; right:auto; }
+  .hidden { display:none; } /* ok because we lazy-init on open */
+
+  .panel { display:flex; gap:24px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,.12); }
+  .presets { display:flex; flex-direction:column; gap:14px; width:280px; }
+  .preset { text-align:left; padding:.9rem 1.1rem; border:1px solid #e5e7eb; border-radius:999px; background:#fff; cursor:pointer; }
+  .preset:hover { background:#f8fafc; }
+
+  .cal-wrap { width: 720px; min-width: 640px; display:flex; flex-direction:column; gap:14px; }
+  .cal-mount { width: 100%; }
+  .cal-mount .flatpickr-calendar.inline { position: static; width: 100%; box-shadow:none; border:1px solid #e5e7eb; border-radius:12px; }
+  .cal-mount .flatpickr-days { width:100%; }
+  .cal-mount .flatpickr-days .dayContainer { width:50%; min-width:320px; }
+
+  .cta { display:flex; justify-content:flex-end; gap:10px; margin-top:6px; padding-top:10px; border-top:1px solid #f1f5f9; }
+  .btn { padding:.6rem 1rem; border-radius:12px; border:1px solid #e5e7eb; background:#fff; cursor:pointer; }
+  .btn.text { background:transparent; }
+  .btn.primary { background:#5b21b6; color:#fff; border-color:#5b21b6; }
+</style>
+
+<script type="module">
+  import '/src/components/events/event-date-filter.client.ts';
+</script>
