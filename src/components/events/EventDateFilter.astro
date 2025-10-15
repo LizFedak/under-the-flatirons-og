@@ -9,6 +9,8 @@ const {
 
 // keep CSS import where you like; client will import flatpickr via Vite
 import 'flatpickr/dist/flatpickr.css';
+
+
 ---
 
 <event-date-filter
@@ -71,10 +73,6 @@ import 'flatpickr/dist/flatpickr.css';
   .btn.primary { background:#5b21b6; color:#fff; border-color:#5b21b6; }
 </style>
 
-<!-- <script type="module">
-  import '/src/components/events/event-date-filter.client.ts';
-</script> -->
 
-<script type="module">
-  import './event-date-filter.client.ts';  // relative to THIS .astro file
-</script>
+
+<script type="module" src="./event-date-filter.client.ts"></script>
